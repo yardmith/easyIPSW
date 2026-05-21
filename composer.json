@@ -1,5 +1,6 @@
 {
     "require": {
-        "flightphp/core": "^3.18"
+        "flightphp/core": "^3.18",
+        "cboden/ratchet": "^0.4.4"
     }
 }
