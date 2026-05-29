@@ -3,6 +3,35 @@
     "device": "iPhone2,1",
     "version_string": "iOS 6.1.6",
     "url": "https://secure-appldnld.apple.com/iOS6.1/091-3457.20140221.Btt3e/iPhone2,1_6.1.6_10B500_Restore.ipsw",
+    "signed": true,
+    "keys": {
+      "048-2955-001.dmg": {
+        "key": "7ab6f9149d78ade9b6900740a8312d6f81bf75be6688e72d9048fdf1ec0f231e1e6c3705"
+      },
+      "048-2900-001.dmg": {
+        "key": "7175f3b04b21dc4f2440396c99a715e1b491618327c8df71068c632c4cd80baa",
+        "iv": "ba66476a54ad600fa55260a666d3a985"
+      },
+      "048-2889-001.dmg": {
+        "key": "7daa8741a223df0672513b95852a1a78f7055867872fd5b4907fc158735d9abd",
+        "iv": "702c4aebddc712d22ea41c8091c40ab9"
+      },
+      "applelogo.s5l8920x.img3": {
+        "key": "25ec25f7f2962bc8f655cc039aa463c2a0d0a1f78db7968f741ada0ba37d9ae2",
+        "iv": "33787ba6a52afd52cab7080e96d01056"
+      }
+    }
+  },
+  "iPhone1,1_1.0_1A543a_Restore.ipsw": {
+    "device": "iPhone1,1",
+    "version_string": "iPhone OS 1.0",
+    "url": "https://secure-appldnld.apple.com/iPhone/061-3538.20070629.B7vXa/iPhone1,1_1.0_1A543a_Restore.ipsw",
     "signed": true
+  },
+  "iPhone6,1_7.0.1_11A470a_Restore.ipsw": {
+    "device": "iPhone6,1",
+    "version_string": "iOS 7.0.1",
+    "url": "https://secure-appldnld.apple.com/iOS7/031-0290.20130914.khyTp/iPhone6,1_7.0.1_11A470a_Restore.ipsw",
+    "signed": false
   }
 }
