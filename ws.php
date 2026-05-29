@@ -36,7 +36,7 @@ class IpswWs implements MessageComponentInterface {
     $ipswId = explode("/", $requestUri)[3];
 
     if (!array_key_exists($ipswId, $db["ipsw"])) {
-      $this->sendStatus($conn, "error", "The IPSW ($ipswId) was not found.");
+      $this->sendStatus($conn, "error", "Unknown IPSW ($ipswId)");
       $conn->close();
     }
 
@@ -77,7 +77,7 @@ class IpswWs implements MessageComponentInterface {
       
       case "listing":
         if (!ipswIsCached($ipswId)) {
-          $this->sendStatus($from, "error", "The IPSW ($ipswId) is not cached. Use the \"cache_ipsw\" command first.");
+          $this->sendStatus($from, "error", "This IPSW ($ipswId) is not cached, use the `cache` command first");
           return;
         }
 
@@ -92,7 +92,7 @@ class IpswWs implements MessageComponentInterface {
         } elseif (pathinfo($location, PATHINFO_EXTENSION) == "dmg") {
           // Not implemented
         } else {
-          $this->sendStatus($from, "error", "Can only get listing for directories or .dmg files.");
+          $this->sendStatus($from, "error", "Can only get listing for directories or .dmg files");
         }
         break;
       
