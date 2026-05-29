@@ -4,6 +4,7 @@
     "version_string": "iOS 6.1.6",
     "url": "https://secure-appldnld.apple.com/iOS6.1/091-3457.20140221.Btt3e/iPhone2,1_6.1.6_10B500_Restore.ipsw",
     "signed": true,
+    "type": "release",
     "keys": {
       "048-2955-001.dmg": {
         "key": "7ab6f9149d78ade9b6900740a8312d6f81bf75be6688e72d9048fdf1ec0f231e1e6c3705"
@@ -26,12 +27,14 @@
     "device": "iPhone1,1",
     "version_string": "iPhone OS 1.0",
     "url": "https://secure-appldnld.apple.com/iPhone/061-3538.20070629.B7vXa/iPhone1,1_1.0_1A543a_Restore.ipsw",
-    "signed": true
+    "signed": true,
+    "type": "release"
   },
   "iPhone6,1_7.0.1_11A470a_Restore.ipsw": {
     "device": "iPhone6,1",
     "version_string": "iOS 7.0.1",
     "url": "https://secure-appldnld.apple.com/iOS7/031-0290.20130914.khyTp/iPhone6,1_7.0.1_11A470a_Restore.ipsw",
-    "signed": false
+    "signed": false,
+    "type": "release"
   }
 }
