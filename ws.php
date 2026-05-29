@@ -50,7 +50,7 @@ class IpswWs implements MessageComponentInterface {
     $cachePath = CACHE_DIR . "/$ipswId";
 
     switch ($command) {
-      case "cache_ipsw":
+      case "cache":
         cacheIpswContents($ipswId, $this->loop, function($current, $total) use ($from) {
           $this->sendStatus($from, "downloading", null, [
             "bytes_downloaded" => $current,
@@ -75,9 +75,10 @@ class IpswWs implements MessageComponentInterface {
         });
         break;
       
-      case "get_listing":
+      case "listing":
         if (!ipswIsCached($ipswId)) {
-          $this->sendStatus($from, "error", null, "The IPSW ($ipswId) is not cached. Use the \"cache_ipsw\" command first.");
+          $this->sendStatus($from, "error", "The IPSW ($ipswId) is not cached. Use the \"cache_ipsw\" command first.");
+          return;
         }
 
         $location = $msg["location"] ?? "/";
