@@ -119,46 +119,47 @@ function ipswIsCached($id) {
   return is_dir(CACHE_DIR . "/$id");
 }
 
-function extractCachedIpsw($cachePath, $extractProgressCallback, $completedCallback, $errorCallback, LoopInterface $loop) {
-  $ipsw = new ZipArchive;
-  if (!$ipsw->open("$cachePath/ipsw.zip")) {
-    $errorCallback("Failed to unzip IPSW");
-    return;
-  }
-
-  $totalFiles = $ipsw->numFiles;
-  $extractProgressCallback(0, $totalFiles);
-
-  $i = 0;
-  $timer = $loop->addPeriodicTimer(0, function() use (&$i, $ipsw, $totalFiles, $cachePath, $extractProgressCallback, $completedCallback, &$timer, &$loop) {
-    if ($i >= $totalFiles) {
-      unlink("$cachePath/ipsw.zip");
-      $ipsw->close();
-      /** @disregard */
-      $loop->cancelTimer($timer);
-      $completedCallback();
-      return;
-    }
-    $ipsw->extractTo($cachePath, [$ipsw->getNameIndex($i)]);
-    $extractProgressCallback($i + 1, $totalFiles);
-    $i++;
-  });
-}
-
 function cacheIpswContents($id, LoopInterface $loop, $downloadProgressCallback, $extractProgressCallback, $completedCallback, $errorCallback) {
   global $db;
 
   if (!array_key_exists($id, $db["ipsw"])) {
-    return false;
+    $errorCallback("Unknown IPSW ($id)");
   }
   if (!array_key_exists("url", $db["ipsw"][$id])) {
-    return false;
+    $errorCallback("This IPSW ($id) doesn't have a download URL");
   }
 
   $cachePath = CACHE_DIR . "/$id";
+
+  $extract = function() use ($cachePath, $extractProgressCallback, $completedCallback, $errorCallback, &$loop) {
+    $ipsw = new ZipArchive;
+    if (!$ipsw->open("$cachePath/ipsw.zip")) {
+      $errorCallback("Failed to unzip IPSW");
+      return;
+    }
+
+    $totalFiles = $ipsw->numFiles;
+    $extractProgressCallback(0, $totalFiles);
+
+    $i = 0;
+    $timer = $loop->addPeriodicTimer(0, function() use (&$i, $ipsw, $totalFiles, $cachePath, $extractProgressCallback, $completedCallback, &$timer, &$loop) {
+      if ($i >= $totalFiles) {
+        unlink("$cachePath/ipsw.zip");
+        $ipsw->close();
+        /** @disregard */
+        $loop->cancelTimer($timer);
+        $completedCallback();
+        return;
+      }
+      $ipsw->extractTo($cachePath, [$ipsw->getNameIndex($i)]);
+      $extractProgressCallback($i + 1, $totalFiles);
+      $i++;
+    });
+  };
+
   if (is_dir($cachePath)) {
     if (is_file("$cachePath/ipsw.zip")) {
-      extractCachedIpsw($cachePath, $extractProgressCallback, $completedCallback, $errorCallback, $loop);
+      $extract();
     } else {
       $completedCallback();
     }
@@ -178,14 +179,14 @@ function cacheIpswContents($id, LoopInterface $loop, $downloadProgressCallback, 
 
     $downloadProgressCallback(0, $totalBytes);
 
-    $timer = $loop->addPeriodicTimer(0, function() use (&$source, &$destination, &$currentBytes, &$prevCurrentBytes, $downloadProgressCallback, &$totalBytes, &$loop, &$timer, $cachePath, $extractProgressCallback, $completedCallback, $errorCallback) {
+    $timer = $loop->addPeriodicTimer(0, function() use (&$source, &$destination, &$currentBytes, &$prevCurrentBytes, $downloadProgressCallback, &$totalBytes, &$loop, &$timer, $extract) {
       if (feof($source)) {
         //$downloadProgressCallback($totalBytes, $totalBytes);
         fclose($source);
         fclose($destination);
         /** @disregard */
         $loop->cancelTimer($timer);
-        extractCachedIpsw($cachePath, $extractProgressCallback, $completedCallback, $errorCallback, $loop);
+        $extract();
         return;
       }
     
