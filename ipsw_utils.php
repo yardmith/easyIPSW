@@ -53,15 +53,17 @@ function decryptImg($path) {
     if (!$keys) return false;
   }
 
+  rename($path, "$path.enc");
+
   switch ($type) {
     case 2:
-      exec("bin/xpwntool $path $path");
+      exec("bin/xpwntool $path.enc $path");
       break;
     case 3:
-      exec("bin/xpwntool $path $path -k " . $keys["key"] . " -iv " . $keys["iv"]);
+      exec("bin/xpwntool $path.enc $path -k " . $keys["key"] . " -iv " . $keys["iv"]);
       break;
     case 4:
-      exec("bin/img4 -i $path -o $path -k " . $keys["iv"] . $keys["key"]);
+      exec("bin/img4 -i $path.enc -o $path -k " . $keys["iv"] . $keys["key"]);
       break;
     default:
       return false;
