@@ -78,21 +78,74 @@ function decryptImg($path) {
   }
 }
 
-function extractDmg($path) {
+function extractDmg($path, LoopInterface $loop, $decryptProgressCallback, $extractProgressCallback, $completedCallback, $errorCallback) {
+  $extract = function() use ($path, &$loop, $extractProgressCallback, $completedCallback) {
+    $dirname = pathinfo($path, PATHINFO_DIRNAME);
+    $oldList = scandir($dirname);
+
+    $handle = popen("bin/7zz x -o" . escapeshellarg($dirname) . " -y -bso2 -bse2 -bsp1 " . escapeshellarg($path) . " 2> /dev/null", "r");
+    $prevPercent = null;
+    $timer = $loop->addPeriodicTimer(0, function() use (&$loop, &$timer, &$handle, $dirname, $oldList, $path, $extractProgressCallback, $completedCallback, &$prevPercent) {
+      if (feof($handle)) {
+        pclose($handle);
+        /** @disregard */
+        $loop->cancelTimer($timer);
+
+        $dir = array_values(array_diff(scandir($dirname), $oldList))[0];
+        unlink($path);
+        rename($dirname . "/$dir", $path);
+        $completedCallback();
+
+        return;
+      }
+
+      $chunk = fread($handle, 1024);
+      if (!str_contains($chunk, "%")) return;
+      $percent = intval(explode("%", str_replace([hex2bin("08"), " "], "", $chunk))[0]);
+      if ($percent == $prevPercent) return;
+      $extractProgressCallback($percent);
+      $prevPercent = $percent;
+    });
+  };
+
   if (identifyImg($path) !== false) {
-    if (decryptImg($path) === false) return false;
+    if (decryptImg($path) === false) {
+      $errorCallback("Failed to decrypt DMG");
+      return;
+    }
+    //$decryptProgressCallback(filesize("$path.enc"), filesize("$path.enc"));
+    $extract();
   } else {
     $keys = getKeysFromPath($path);
-    if (!$keys) return false;
-    exec("bin/dmg extract $path $path -k " . $keys["key"]);
-  }
+    if (!$keys) {
+      $errorCallback("No keys found");
+      return;
+    }
+    rename($path, "$path.enc");
 
-  $dirname = pathinfo($path, PATHINFO_DIRNAME);
-  $oldList = scandir($dirname);
-  exec("bin/7zz x -o" . $dirname . " -y $path");
-  $dir = array_values(array_diff(scandir($dirname), $oldList))[0];
-  unlink($path);
-  rename($dirname . "/$dir", $path);
+    $handle = popen("bin/dmg extract " . escapeshellarg("$path.enc") . " " . escapeshellarg($path) . " -k " . $keys["key"], "r");
+    $prevOffset = null;
+    $fileSize = filesize("$path.enc");
+    
+    $timer = $loop->addPeriodicTimer(0, function() use (&$loop, &$handle, &$timer, &$prevOffset, $decryptProgressCallback, $fileSize, $extract) {
+      if (feof($handle)) {
+        //$decryptProgressCallback($fileSize, $fileSize);
+        pclose($handle);
+        /** @disregard */
+        $loop->cancelTimer($timer);
+        $extract();
+        return;
+      }
+
+      $output = fgets($handle);
+
+      if (!str_contains($output, "fileOffset=")) return;
+      $fileOffset = hexdec(explode("fileOffset=", $output)[1]);
+      if ($fileOffset < $prevOffset + DOWNLOAD_PROGRESS_INTERVAL_BYTES) return;
+      $decryptProgressCallback($fileOffset, $fileSize);
+      $prevOffset = $fileOffset;
+    });
+  }
 }
 
 function getDirListing($path) {

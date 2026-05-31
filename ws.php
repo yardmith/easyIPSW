@@ -92,7 +92,24 @@ class IpswWs implements MessageComponentInterface {
         } elseif (!is_file($location)) {
           $this->sendStatus($from, "error", "File/directory not found");
         } elseif (pathinfo($location, PATHINFO_EXTENSION) == "dmg") {
-          // Not implemented
+          extractDmg($location, $this->loop, function($current, $total) use ($from) {
+            $this->sendStatus($from, "decrypting", [
+              "bytes_decrypted" => $current,
+              "bytes_total" => $total,
+              "steps_done" => 0,
+              "steps_total" => 2
+            ]);
+          }, function($percent) use ($from) {
+            $this->sendStatus($from, "extracting", [
+              "percent_completed" => $percent,
+              "steps_done" => 1,
+              "steps_total" => 2
+            ]);
+          }, function() use ($from, $location) {
+            $this->sendStatus($from, "listing", null, getDirListing($location));
+          }, function($error) use ($from) {
+            $this->sendStatus($from, "error", $error);
+          });
         } else {
           $this->sendStatus($from, "error", "Can only get listing for directories or .dmg files");
         }
