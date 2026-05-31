@@ -54,19 +54,27 @@ function decryptImg($path) {
   }
 
   rename($path, "$path.enc");
+  $result_code = null;
+  $pathEsc = escapeshellarg($path);
+  $encPath = escapeshellarg("$path.enc");
 
   switch ($type) {
     case 2:
-      exec("bin/xpwntool $path.enc $path");
+      exec("bin/xpwntool $encPath $pathEsc", result_code: $result_code);
       break;
     case 3:
-      exec("bin/xpwntool $path.enc $path -k " . $keys["key"] . " -iv " . $keys["iv"]);
+      exec("bin/xpwntool $encPath $pathEsc -k " . $keys["key"] . " -iv " . $keys["iv"], result_code: $result_code);
       break;
     case 4:
-      exec("bin/img4 -i $path.enc -o $path -k " . $keys["iv"] . $keys["key"]);
+      exec("bin/img4 -i $encPath -o $pathEsc -k " . $keys["iv"] . $keys["key"], result_code: $result_code);
       break;
     default:
       return false;
+  }
+
+  if ($result_code !== 0) {
+    rename("$path.enc", $path);
+    return false;
   }
 }
 
