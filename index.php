@@ -10,10 +10,10 @@ Flight::route("/@id/download", function($id) {
   global $db;
 
   if (!array_key_exists($id, $db["ipsw"])) {
-    Flight::halt("404", "Unknown IPSW ($id)");
+    Flight::halt(404, "Unknown IPSW ($id)");
   }
   if (!array_key_exists("url", $db["ipsw"][$id])) {
-    Flight::halt("500", "This IPSW ($id) doesn't have a download URL");
+    Flight::halt(500, "This IPSW ($id) doesn't have a download URL");
   }
 
   Flight::redirect($db["ipsw"][$id]["url"]);
