@@ -89,6 +89,8 @@ class IpswWs implements MessageComponentInterface {
         
         if (is_dir($location)) {
           $this->sendStatus($from, "listing", null, getDirListing($location));
+        } elseif (!is_file($location)) {
+          $this->sendStatus($from, "error", "File/directory not found");
         } elseif (pathinfo($location, PATHINFO_EXTENSION) == "dmg") {
           // Not implemented
         } else {
