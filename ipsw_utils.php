@@ -5,6 +5,13 @@ use React\EventLoop\LoopInterface;
 require_once "db.php";
 require_once "constants.php";
 
+function pathNeedsDmgExtraction($path) {
+  if (!str_contains($path, ".dmg")) {
+    return false;
+  }
+  return explode(".dmg", $path)[0] . ".dmg";
+}
+
 function identifyImg($path) {
   $start = file_get_contents($path, length: 10);
 

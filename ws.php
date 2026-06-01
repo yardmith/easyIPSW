@@ -86,13 +86,12 @@ class IpswWs implements MessageComponentInterface {
           $location = "/$location";
         }
         $location = "$cachePath$location";
+        $dmgToExtract = pathNeedsDmgExtraction($location);
         
         if (is_dir($location)) {
           $this->sendStatus($from, "listing", null, getDirListing($location));
-        } elseif (!is_file($location)) {
-          $this->sendStatus($from, "error", "File/directory not found");
-        } elseif (pathinfo($location, PATHINFO_EXTENSION) == "dmg") {
-          extractDmg($location, $this->loop, function($current, $total) use ($from) {
+        } elseif ($dmgToExtract) {
+          extractDmg($dmgToExtract, $this->loop, function($current, $total) use ($from) {
             $this->sendStatus($from, "decrypting", [
               "bytes_decrypted" => $current,
               "bytes_total" => $total,
@@ -110,6 +109,8 @@ class IpswWs implements MessageComponentInterface {
           }, function($error) use ($from) {
             $this->sendStatus($from, "error", $error);
           });
+        } elseif (!is_file($location)) {
+          $this->sendStatus($from, "error", "File/directory not found");
         } else {
           $this->sendStatus($from, "error", "Can only get listing for directories or .dmg files");
         }
