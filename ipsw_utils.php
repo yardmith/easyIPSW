@@ -4,6 +4,7 @@ use React\EventLoop\LoopInterface;
 
 require_once "db.php";
 require_once "constants.php";
+require_once "cache_utils.php";
 
 function pathNeedsDmgExtraction($path) {
   if (!str_contains($path, ".dmg")) {
@@ -34,6 +35,15 @@ function img2IsEncrypted($path) {
   } else {
     return false;
   }
+}
+
+function getIpswIdFromPath($path) {
+  $pathParts = explode("/", $path);
+  $cacheIdx = array_search(CACHE_DIR, $pathParts);
+  if ($cacheIdx === false) {
+    return false;
+  }
+  return $pathParts[$cacheIdx + 1];
 }
 
 function getKeysFromPath($path) {
@@ -88,6 +98,8 @@ function decryptImg($path) {
 }
 
 function extractDmg($path, LoopInterface $loop, $decryptProgressCallback = null, $extractProgressCallback = null, $completedCallback = null, $errorCallback = null) {
+  updateExpireTimestamp(getIpswIdFromPath($path));
+
   if ($decryptProgressCallback === null) {
     $decryptProgressCallback = function() {};
   }
@@ -171,6 +183,8 @@ function extractDmg($path, LoopInterface $loop, $decryptProgressCallback = null,
 }
 
 function getDirListing($path) {
+  updateExpireTimestamp(getIpswIdFromPath($path));
+  
   $listing = array_values(array_diff(scandir($path), [".", ".."]));
   $files = [];
   $dirs = [];
@@ -196,6 +210,8 @@ function ipswIsCached($id) {
 
 function cacheIpswContents($id, LoopInterface $loop, $downloadProgressCallback = null, $extractProgressCallback = null, $completedCallback = null, $errorCallback = null) {
   global $db;
+
+  updateExpireTimestamp($id);
 
   if ($downloadProgressCallback === null) {
     $downloadProgressCallback = function() {};
