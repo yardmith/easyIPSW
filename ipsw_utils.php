@@ -85,7 +85,20 @@ function decryptImg($path) {
   }
 }
 
-function extractDmg($path, LoopInterface $loop, $decryptProgressCallback, $extractProgressCallback, $completedCallback, $errorCallback) {
+function extractDmg($path, LoopInterface $loop, $decryptProgressCallback = null, $extractProgressCallback = null, $completedCallback = null, $errorCallback = null) {
+  if ($decryptProgressCallback === null) {
+    $decryptProgressCallback = function() {};
+  }
+  if ($extractProgressCallback === null) {
+    $extractProgressCallback = function() {};
+  }
+  if ($completedCallback === null) {
+    $completedCallback = function() {};
+  }
+  if ($errorCallback === null) {
+    $errorCallback = function() {};
+  }
+
   $extract = function() use ($path, &$loop, $extractProgressCallback, $completedCallback) {
     $dirname = pathinfo($path, PATHINFO_DIRNAME);
     $oldList = scandir($dirname);
@@ -179,8 +192,21 @@ function ipswIsCached($id) {
   return is_dir(CACHE_DIR . "/$id");
 }
 
-function cacheIpswContents($id, LoopInterface $loop, $downloadProgressCallback, $extractProgressCallback, $completedCallback, $errorCallback) {
+function cacheIpswContents($id, LoopInterface $loop, $downloadProgressCallback = null, $extractProgressCallback = null, $completedCallback = null, $errorCallback = null) {
   global $db;
+
+  if ($downloadProgressCallback === null) {
+    $downloadProgressCallback = function() {};
+  }
+  if ($extractProgressCallback === null) {
+    $extractProgressCallback = function() {};
+  }
+  if ($completedCallback === null) {
+    $completedCallback = function() {};
+  }
+  if ($errorCallback === null) {
+    $errorCallback = function() {};
+  }
 
   if (!array_key_exists($id, $db["ipsw"])) {
     $errorCallback("Unknown IPSW ($id)");
