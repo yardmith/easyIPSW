@@ -1,8 +1,11 @@
 <?php
 
+use React\EventLoop\Loop;
+
 require_once "vendor/autoload.php";
 require_once "constants.php";
 require_once "db.php";
+require_once "ipsw_utils.php";
 
 Flight::set("flight.debug", DEBUG);
 
@@ -18,5 +21,39 @@ Flight::route("/@id/download", function($id) {
 
   Flight::redirect($db["ipsw"][$id]["url"]);
 });
+
+Flight::route("/@id/raw/*", function($id) {
+  $path = explode("/$id/raw", parse_url(Flight::request()->getFullUrl(), PHP_URL_PATH))[1];
+  $cachePath = CACHE_DIR . "/$id$path";
+
+  $serveFile = function() use ($cachePath, $path) {
+    if (is_file("$cachePath.enc")) {
+      /** @disregard */
+      Flight::download("$cachePath.enc", pathinfo($cachePath, PATHINFO_BASENAME));
+      return;
+    }
+
+    if (is_dir($cachePath)) {
+      Flight::halt(400, "Path ($path) is a directory");
+    } elseif (!is_file($cachePath) || (str_contains($cachePath, ".enc") && is_file(str_replace(".enc", "", $cachePath))) ) {
+      Flight::halt(404, "File/directory not found");
+    }
+    
+    Flight::download($cachePath);
+  };
+
+  cacheIpswContents($id, Loop::get(), completedCallback: function() use ($cachePath, $serveFile) {
+    $dmgToExtract = pathNeedsDmgExtraction($cachePath);
+    if ($dmgToExtract) {
+      extractDmg($dmgToExtract, Loop::get(), completedCallback: $serveFile, errorCallback: function($error) {
+        echo $error;
+      });
+    } else {
+      $serveFile();
+    }
+  }, errorCallback: function($error) {
+    echo $error;
+  });
+})->stream();
 
 Flight::start();

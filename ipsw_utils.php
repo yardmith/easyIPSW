@@ -9,7 +9,9 @@ function pathNeedsDmgExtraction($path) {
   if (!str_contains($path, ".dmg")) {
     return false;
   }
-  return explode(".dmg", $path)[0] . ".dmg";
+  $dmgPath = explode(".dmg", $path)[0] . ".dmg";
+  if (is_dir($dmgPath)) return false;
+  return $dmgPath;
 }
 
 function identifyImg($path) {
