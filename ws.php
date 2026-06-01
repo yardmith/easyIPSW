@@ -1,5 +1,7 @@
 <?php
 
+chdir(__DIR__);
+
 require_once "vendor/autoload.php";
 require_once "constants.php";
 require_once "ipsw_utils.php";
