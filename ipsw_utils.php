@@ -128,6 +128,8 @@ function extractDmg($path, LoopInterface $loop, $decryptProgressCallback = null,
         $dir = array_values(array_diff(scandir($dirname), $oldList))[0];
         unlink($path);
         rename($dirname . "/$dir", $path);
+        exec("chown -R :" . escapeshellarg(SHARED_OWNERSHIP_GROUP) . " " . escapeshellarg($path));
+        exec("chmod -R 775 " . escapeshellarg($path));
         $completedCallback();
 
         return;
