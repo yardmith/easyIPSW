@@ -248,6 +248,7 @@ function cacheIpswContents($id, LoopInterface $loop, $downloadProgressCallback =
     $i = 0;
     $timer = $loop->addPeriodicTimer(0, function() use (&$i, $ipsw, $totalFiles, $cachePath, $extractProgressCallback, $completedCallback, &$timer, &$loop) {
       if ($i >= $totalFiles) {
+        chdir(__DIR__);
         unlink("$cachePath/ipsw.zip");
         $ipsw->close();
         /** @disregard */
