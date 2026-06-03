@@ -12,7 +12,7 @@ if (PHP_SAPI !== "cli") {
 }
 
 foreach ($db["cache"] as $dir => $expires) {
-  if (time() < $expires) continue;
+  if (time() < $expires && !in_array("-a", $argv)) continue;
 
   exec("rm -rf " . escapeshellarg(__DIR__ . "/" . CACHE_DIR . "/$dir"));
   removeCacheEntry($dir);
