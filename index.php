@@ -27,15 +27,26 @@ Flight::route("/@id/raw/*", function($id) {
   $cachePath = CACHE_DIR . "/$id$path";
 
   $serveFile = function() use ($cachePath, $path) {
+    $defry = isset(Flight::request()->query->defry);
+
     if (is_file("$cachePath.original")) {
       /** @disregard */
       Flight::download("$cachePath.original", pathinfo($cachePath, PATHINFO_BASENAME));
       return;
     }
+    if ($defry && pathinfo($cachePath, PATHINFO_EXTENSION) == "png") {
+      if (!is_file("$cachePath.defried")) {
+        exec("bin/pngdefry -s .defried " . escapeshellarg($cachePath));
+        rename(pathinfo($cachePath, PATHINFO_DIRNAME) . "/" . pathinfo($cachePath, PATHINFO_FILENAME) . ".defried.png", "$cachePath.defried");
+      }
+      /** @disregard */
+      Flight::download("$cachePath.defried", pathinfo($cachePath, PATHINFO_BASENAME));
+      return;
+    }
 
     if (is_dir($cachePath)) {
       Flight::halt(400, "Path ($path) is a directory");
-    } elseif (!is_file($cachePath) || pathinfo($cachePath, PATHINFO_EXTENSION) == "original") {
+    } elseif (!is_file($cachePath) || in_array(pathinfo($cachePath, PATHINFO_EXTENSION), ["original", "defried"])) {
       Flight::halt(404, "File/directory not found");
     }
     
