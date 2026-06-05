@@ -27,15 +27,15 @@ Flight::route("/@id/raw/*", function($id) {
   $cachePath = CACHE_DIR . "/$id$path";
 
   $serveFile = function() use ($cachePath, $path) {
-    if (is_file("$cachePath.enc")) {
+    if (is_file("$cachePath.original")) {
       /** @disregard */
-      Flight::download("$cachePath.enc", pathinfo($cachePath, PATHINFO_BASENAME));
+      Flight::download("$cachePath.original", pathinfo($cachePath, PATHINFO_BASENAME));
       return;
     }
 
     if (is_dir($cachePath)) {
       Flight::halt(400, "Path ($path) is a directory");
-    } elseif (!is_file($cachePath) || (str_contains($cachePath, ".enc") && is_file(str_replace(".enc", "", $cachePath))) ) {
+    } elseif (!is_file($cachePath) || pathinfo($cachePath, PATHINFO_EXTENSION) == "original") {
       Flight::halt(404, "File/directory not found");
     }
     

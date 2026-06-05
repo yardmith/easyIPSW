@@ -72,10 +72,10 @@ function decryptImg($path) {
     if (!$keys) return false;
   }
 
-  rename($path, "$path.enc");
+  rename($path, "$path.original");
   $result_code = null;
   $pathEsc = escapeshellarg($path);
-  $encPath = escapeshellarg("$path.enc");
+  $encPath = escapeshellarg("$path.original");
 
   switch ($type) {
     case 2:
@@ -92,7 +92,7 @@ function decryptImg($path) {
   }
 
   if ($result_code !== 0) {
-    rename("$path.enc", $path);
+    rename("$path.original", $path);
     return false;
   }
 }
@@ -149,7 +149,7 @@ function extractDmg($path, LoopInterface $loop, $decryptProgressCallback = null,
       $errorCallback("Failed to decrypt DMG");
       return;
     }
-    //$decryptProgressCallback(filesize("$path.enc"), filesize("$path.enc"));
+    //$decryptProgressCallback(filesize("$path.original"), filesize("$path.original"));
     $extract();
   } else {
     $keys = getKeysFromPath($path);
@@ -157,11 +157,11 @@ function extractDmg($path, LoopInterface $loop, $decryptProgressCallback = null,
       $errorCallback("No keys found");
       return;
     }
-    rename($path, "$path.enc");
+    rename($path, "$path.original");
 
-    $handle = popen("bin/dmg extract " . escapeshellarg("$path.enc") . " " . escapeshellarg($path) . " -k " . $keys["key"], "r");
+    $handle = popen("bin/dmg extract " . escapeshellarg("$path.original") . " " . escapeshellarg($path) . " -k " . $keys["key"], "r");
     $prevOffset = null;
-    $fileSize = filesize("$path.enc");
+    $fileSize = filesize("$path.original");
     
     $timer = $loop->addPeriodicTimer(0, function() use (&$loop, &$handle, &$timer, &$prevOffset, $decryptProgressCallback, $fileSize, $extract) {
       if (feof($handle)) {
