@@ -26,6 +26,10 @@ Flight::route("/@id/raw/*", function($id) {
   $path = explode("/$id/raw", parse_url(Flight::request()->getFullUrl(), PHP_URL_PATH))[1];
   $cachePath = CACHE_DIR . "/$id$path";
 
+  if (!getIpswIdFromPath($cachePath)) {
+    Flight::halt(404, "File/directory not found");
+  }
+
   $serveFile = function() use ($cachePath, $path) {
     $defry = isset(Flight::request()->query->defry);
 

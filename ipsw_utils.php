@@ -38,9 +38,10 @@ function img2IsEncrypted($path) {
 }
 
 function getIpswIdFromPath($path) {
+  $path = realpath($path);
   $pathParts = explode("/", $path);
   $cacheIdx = array_search(CACHE_DIR, $pathParts);
-  if ($cacheIdx === false) {
+  if ($cacheIdx === false || count($pathParts) <= $cacheIdx + 1) {
     return false;
   }
   return $pathParts[$cacheIdx + 1];
@@ -185,7 +186,10 @@ function extractDmg($path, LoopInterface $loop, $decryptProgressCallback = null,
 }
 
 function getDirListing($path) {
-  updateExpireTimestamp(getIpswIdFromPath($path));
+  if (!$ipswId = getIpswIdFromPath($path)) {
+    return false;
+  }
+  updateExpireTimestamp($ipswId);
   
   $listing = array_values(array_diff(scandir($path), [".", ".."]));
   $files = [];
