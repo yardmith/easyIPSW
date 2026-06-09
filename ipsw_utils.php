@@ -199,6 +199,7 @@ function getDirListing($path) {
     $name = $listing[$i];
 
     //if (in_array($name, [".HFS+ Private Directory Data", ".HFS+ Private Directory Data\r", ".Trashes", "[HFS+ Private Data]"])) continue;
+    if (in_array(pathinfo($name, PATHINFO_EXTENSION), IGNORE_EXTENSIONS)) continue;
 
     if (is_dir("$path/$name") && pathinfo($name, PATHINFO_EXTENSION) != "dmg") {
       array_push($dirs, $name);

@@ -50,7 +50,7 @@ Flight::route("/@id/raw/*", function($id) {
 
     if (is_dir($cachePath)) {
       Flight::halt(400, "Path ($path) is a directory");
-    } elseif (!is_file($cachePath) || in_array(pathinfo($cachePath, PATHINFO_EXTENSION), ["original", "defried"])) {
+    } elseif (!is_file($cachePath) || in_array(pathinfo($cachePath, PATHINFO_EXTENSION), IGNORE_EXTENSIONS)) {
       Flight::halt(404, "File/directory not found");
     }
     
