@@ -129,7 +129,7 @@ class IpswWs implements MessageComponentInterface {
   }
 
   public function onClose(ConnectionInterface $conn) {
-    
+    $this->clients->offsetUnset($conn);
   }
 
   public function onError(ConnectionInterface $conn, Exception $e) {
