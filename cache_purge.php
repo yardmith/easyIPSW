@@ -11,8 +11,17 @@ if (PHP_SAPI !== "cli") {
   exit;
 }
 
+if (in_array("-h", $argv) || in_array("--help", $argv)) {
+  echo "Usage: " . basename(__FILE__) . " [-h] [-a] [-j]\n\n";
+  echo "Purges expired IPSWs from the cache directory and the cache.json DB file. Will also purge any ongoing jobs associated with these IPSWs.\n\n";
+  echo "Options:\n";
+  echo "  -h, --help        Display this help and exit\n";
+  echo "  -a, --all         Purge all cached IPSWs, not just expired ones\n";
+  exit;
+}
+
 foreach ($db["cache"] as $dir => $expires) {
-  if (time() < $expires && !in_array("-a", $argv)) continue;
+  if (time() < $expires && !in_array("-a", $argv) && !in_array("--all", $argv)) continue;
 
   exec("rm -rf " . escapeshellarg(__DIR__ . "/" . CACHE_DIR . "/$dir"));
   removeCacheEntry($dir);
