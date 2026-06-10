@@ -35,16 +35,16 @@ Flight::route("/@id/raw/*", function($id) {
 
     if (is_file("$cachePath.original")) {
       /** @disregard */
-      Flight::download("$cachePath.original", pathinfo($cachePath, PATHINFO_BASENAME));
+      Flight::download("$cachePath.original", basename($cachePath));
       return;
     }
     if ($defry && pathinfo($cachePath, PATHINFO_EXTENSION) == "png") {
       if (!is_file("$cachePath.defried")) {
         exec("bin/pngdefry -s .defried " . escapeshellarg($cachePath));
-        rename(pathinfo($cachePath, PATHINFO_DIRNAME) . "/" . pathinfo($cachePath, PATHINFO_FILENAME) . ".defried.png", "$cachePath.defried");
+        rename(dirname($cachePath) . "/" . pathinfo($cachePath, PATHINFO_FILENAME) . ".defried.png", "$cachePath.defried");
       }
       /** @disregard */
-      Flight::download("$cachePath.defried", pathinfo($cachePath, PATHINFO_BASENAME));
+      Flight::download("$cachePath.defried", basename($cachePath));
       return;
     }
 

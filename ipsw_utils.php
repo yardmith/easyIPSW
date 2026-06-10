@@ -58,7 +58,7 @@ function getKeysFromPath($path) {
   }
 
   $ipswId = $pathParts[$cacheIdx + 1];
-  $filename = pathinfo($path, PATHINFO_BASENAME);
+  $filename = basename($path);
   if (!array_key_exists("keys", $db["ipsw"][$ipswId]) || !array_key_exists($filename, $db["ipsw"][$ipswId]["keys"])) {
     return false;
   }
@@ -116,7 +116,7 @@ function extractDmg($path, LoopInterface $loop, $decryptProgressCallback = null,
   }
 
   $extract = function() use ($path, &$loop, $extractProgressCallback, $completedCallback) {
-    $dirname = pathinfo($path, PATHINFO_DIRNAME);
+    $dirname = dirname($path);
     $oldList = scandir($dirname);
 
     $handle = popen("bin/7zz x -o" . escapeshellarg($dirname) . " -y -bso2 -bse2 -bsp1 " . escapeshellarg($path) . " 2> /dev/null", "r");
