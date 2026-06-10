@@ -1,6 +1,7 @@
 {
     "require": {
         "flightphp/core": "^3.18",
-        "cboden/ratchet": "^0.4.4"
+        "cboden/ratchet": "^0.4.4",
+        "symfony/filesystem": "^7.4"
     }
 }

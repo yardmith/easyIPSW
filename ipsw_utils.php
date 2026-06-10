@@ -1,6 +1,7 @@
 <?php
 
 use React\EventLoop\LoopInterface;
+use Symfony\Component\Filesystem\Path;
 
 require_once "db.php";
 require_once "constants.php";
@@ -38,7 +39,7 @@ function img2IsEncrypted($path) {
 }
 
 function getIpswIdFromPath($path) {
-  $path = realpath($path);
+  $path = Path::canonicalize($path);
   $pathParts = explode("/", $path);
   $cacheIdx = array_search(CACHE_DIR, $pathParts);
   if ($cacheIdx === false || count($pathParts) <= $cacheIdx + 1) {
