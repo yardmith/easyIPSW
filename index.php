@@ -40,7 +40,7 @@ Flight::route("/@id/raw/*", function($id) {
     }
     if ($defry && pathinfo($cachePath, PATHINFO_EXTENSION) == "png") {
       if (!is_file("$cachePath.defried")) {
-        exec("bin/pngdefry -s .defried " . escapeshellarg($cachePath));
+        exec(BIN_DIR . "pngdefry -s .defried " . escapeshellarg($cachePath));
         rename(dirname($cachePath) . "/" . pathinfo($cachePath, PATHINFO_FILENAME) . ".defried.png", "$cachePath.defried");
       }
       /** @disregard */
@@ -57,17 +57,25 @@ Flight::route("/@id/raw/*", function($id) {
     Flight::download($cachePath);
   };
 
-  cacheIpswContents($id, Loop::get(), completedCallback: function() use ($cachePath, $serveFile) {
-    $dmgToExtract = pathNeedsDmgExtraction($cachePath);
-    if ($dmgToExtract) {
-      extractDmg($dmgToExtract, Loop::get(), completedCallback: $serveFile, errorCallback: function($error) {
-        echo $error;
-      });
-    } else {
-      $serveFile();
+  $cacheJob = cacheIpswContents($id, Loop::get());
+  subscribeToJobAsync($cacheJob, function($status, $data) use ($cachePath, $serveFile) {
+    if ($status == "done") {
+      $dmgToExtract = pathNeedsDmgExtraction($cachePath);
+      if ($dmgToExtract) {
+        $dmgJob = extractDmg($dmgToExtract, Loop::get());
+        subscribeToJobAsync($dmgJob, function($status, $data) use ($serveFile) {
+          if ($status == "done") {
+            $serveFile();
+          } elseif ($status == "error") {
+            exit($data["message"]);
+          }
+        });
+      } else {
+        $serveFile();
+      }
+    } elseif ($status == "error") {
+      exit($data["message"]);
     }
-  }, errorCallback: function($error) {
-    echo $error;
   });
 })->stream();
 

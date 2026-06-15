@@ -1,11 +1,16 @@
 <?php
 
+use Psr\Http\Message\ResponseInterface;
+use React\ChildProcess\Process;
 use React\EventLoop\LoopInterface;
+use React\Http\Browser;
+use React\Stream\WritableResourceStream;
 use Symfony\Component\Filesystem\Path;
 
 require_once "db.php";
 require_once "constants.php";
 require_once "cache_utils.php";
+require_once "job_utils.php";
 
 function pathNeedsDmgExtraction($path) {
   if (!str_contains($path, ".dmg")) {
@@ -41,7 +46,7 @@ function img2IsEncrypted($path) {
 function getIpswIdFromPath($path) {
   $path = Path::canonicalize($path);
   $pathParts = explode("/", $path);
-  $cacheIdx = array_search(CACHE_DIR, $pathParts);
+  $cacheIdx = array_search(CACHE_DIR_NAME, $pathParts);
   if ($cacheIdx === false || count($pathParts) <= $cacheIdx + 1) {
     return false;
   }
@@ -52,7 +57,7 @@ function getKeysFromPath($path) {
   global $db;
 
   $pathParts = explode("/", $path);
-  $cacheIdx = array_search(CACHE_DIR, $pathParts);
+  $cacheIdx = array_search(CACHE_DIR_NAME, $pathParts);
   if ($cacheIdx === false || count($pathParts) <= $cacheIdx + 1) {
     return false;
   }
@@ -81,13 +86,13 @@ function decryptImg($path) {
 
   switch ($type) {
     case 2:
-      exec("bin/xpwntool $encPath $pathEsc", result_code: $result_code);
+      exec(BIN_DIR . "xpwntool $encPath $pathEsc", result_code: $result_code);
       break;
     case 3:
-      exec("bin/xpwntool $encPath $pathEsc -k " . $keys["key"] . " -iv " . $keys["iv"], result_code: $result_code);
+      exec(BIN_DIR . "xpwntool $encPath $pathEsc -k " . $keys["key"] . " -iv " . $keys["iv"], result_code: $result_code);
       break;
     case 4:
-      exec("bin/img4 -i $encPath -o $pathEsc -k " . $keys["iv"] . $keys["key"], result_code: $result_code);
+      exec(BIN_DIR . "img4 -i $encPath -o $pathEsc -k " . $keys["iv"] . $keys["key"], result_code: $result_code);
       break;
     default:
       return false;
@@ -99,91 +104,98 @@ function decryptImg($path) {
   }
 }
 
-function extractDmg($path, LoopInterface $loop, $decryptProgressCallback = null, $extractProgressCallback = null, $completedCallback = null, $errorCallback = null) {
-  updateExpireTimestamp(getIpswIdFromPath($path));
+function extractDmg($path, LoopInterface $loop) {
+  $ipswId = getIpswIdFromPath($path);
+  updateExpireTimestamp($ipswId);
 
-  if ($decryptProgressCallback === null) {
-    $decryptProgressCallback = function() {};
-  }
-  if ($extractProgressCallback === null) {
-    $extractProgressCallback = function() {};
-  }
-  if ($completedCallback === null) {
-    $completedCallback = function() {};
-  }
-  if ($errorCallback === null) {
-    $errorCallback = function() {};
+  $jobData = ["filename" => basename($path)];
+  $job = getOngoingJob($ipswId, "extractDmg", $jobData);
+  if ($job) {
+    return $job;
+  } else {
+    $job = addJob($ipswId, "extractDmg", $jobData);
   }
 
-  $extract = function() use ($path, &$loop, $extractProgressCallback, $completedCallback) {
+  $extract = function() use ($path, $job) {
     $dirname = dirname($path);
     $oldList = scandir($dirname);
 
-    $handle = popen("bin/7zz x -o" . escapeshellarg($dirname) . " -y -bso2 -bse2 -bsp1 " . escapeshellarg($path) . " 2> /dev/null", "r");
+    $process = new Process(BIN_DIR . "7zz x -o" . escapeshellarg($dirname) . " -y -bso2 -bse2 -bsp1 " . escapeshellarg($path) . " 2> /dev/null");
+    $process->start();
     $prevPercent = null;
-    $timer = $loop->addPeriodicTimer(0, function() use (&$loop, &$timer, &$handle, $dirname, $oldList, $path, $extractProgressCallback, $completedCallback, &$prevPercent) {
-      if (feof($handle)) {
-        pclose($handle);
-        /** @disregard */
-        $loop->cancelTimer($timer);
 
-        $dir = array_values(array_diff(scandir($dirname), $oldList))[0];
-        unlink($path);
-        rename($dirname . "/$dir", $path);
-        exec("chown -R :" . escapeshellarg(SHARED_OWNERSHIP_GROUP) . " " . escapeshellarg($path));
-        exec("chmod -R 775 " . escapeshellarg($path));
-        $completedCallback();
-
-        return;
-      }
-
-      $chunk = fread($handle, 1024);
-      if (!str_contains($chunk, "%")) return;
-      $percent = intval(explode("%", str_replace([hex2bin("08"), " "], "", $chunk))[0]);
+    $process->stdout->on("data", function($output) use (&$prevPercent, $job) {
+      if (!str_contains($output, "%")) return;
+      $percent = intval(explode("%", str_replace([hex2bin("08"), " "], "", $output))[0]);
       if ($percent == $prevPercent) return;
-      $extractProgressCallback($percent);
+
+      publishJobProgress($job, "extracting", [
+        "percent_completed" => $percent,
+        "steps_done" => 1,
+        "steps_total" => 2
+      ]);
+
       $prevPercent = $percent;
     });
+
+    $process->on("exit", function() use ($dirname, $oldList, $path, $job) {
+      $dir = array_values(array_diff(scandir($dirname), $oldList))[0];
+      unlink($path);
+      rename($dirname . "/$dir", $path);
+
+      $process = new Process("chown -R :" . escapeshellarg(SHARED_OWNERSHIP_GROUP) . " " . escapeshellarg($path) . " && chmod -R 775 " . escapeshellarg($path));
+      $process->start();
+      $process->on("exit", function() use ($job) {
+        removeJob($job, data: [
+          "steps_done" => 2,
+          "steps_total" => 2
+        ]);
+      });
+    });
   };
-
-  if (identifyImg($path) !== false) {
-    if (decryptImg($path) === false) {
-      $errorCallback("Failed to decrypt DMG");
-      return;
-    }
-    //$decryptProgressCallback(filesize("$path.original"), filesize("$path.original"));
-    $extract();
-  } else {
-    $keys = getKeysFromPath($path);
-    if (!$keys) {
-      $errorCallback("No keys found");
-      return;
-    }
-    rename($path, "$path.original");
-
-    $handle = popen("bin/dmg extract " . escapeshellarg("$path.original") . " " . escapeshellarg($path) . " -k " . $keys["key"], "r");
-    $prevOffset = null;
-    $fileSize = filesize("$path.original");
-    
-    $timer = $loop->addPeriodicTimer(0, function() use (&$loop, &$handle, &$timer, &$prevOffset, $decryptProgressCallback, $fileSize, $extract) {
-      if (feof($handle)) {
-        //$decryptProgressCallback($fileSize, $fileSize);
-        pclose($handle);
-        /** @disregard */
-        $loop->cancelTimer($timer);
-        $extract();
+  
+  $loop->futureTick(function() use ($path, $extract, $job) {
+    if (identifyImg($path) !== false) {
+      if (decryptImg($path) === false) {
+        removeJob($job, "Failed to decrypt DMG");
         return;
       }
+      $extract();
+    } else {
+      $keys = getKeysFromPath($path);
+      if (!$keys) {
+        removeJob($job, "No keys found");
+        return;
+      }
+      rename($path, "$path.original");
 
-      $output = fgets($handle);
+      $process = new Process(BIN_DIR . "dmg extract " . escapeshellarg("$path.original") . " " . escapeshellarg($path) . " -k " . $keys["key"]);
+      $process->start();
+      $prevOffset = 0;
+      $fileSize = filesize("$path.original");
 
-      if (!str_contains($output, "fileOffset=")) return;
-      $fileOffset = hexdec(explode("fileOffset=", $output)[1]);
-      if ($fileOffset < $prevOffset + DOWNLOAD_PROGRESS_INTERVAL_BYTES) return;
-      $decryptProgressCallback($fileOffset, $fileSize);
-      $prevOffset = $fileOffset;
-    });
-  }
+      $process->stdout->on("data", function($output) use (&$prevOffset, $job, $fileSize) {
+        if (!str_contains($output, "fileOffset=")) return;
+
+        $chunks = explode("fileOffset=", $output);
+        $fileOffset = hexdec(explode("\n", $chunks[array_key_last($chunks) - 1])[0]);
+        if ($fileOffset < $prevOffset + DOWNLOAD_PROGRESS_INTERVAL_BYTES) return;
+
+        publishJobProgress($job, "decrypting", [
+          "bytes_decrypted" => $fileOffset,
+          "bytes_total" => $fileSize,
+          "steps_done" => 0,
+          "steps_total" => 2
+        ]);
+
+        $prevOffset = $fileOffset;
+      });
+
+      $process->on("exit", $extract);
+    }
+  });
+  
+  return $job;
 }
 
 function getDirListing($path) {
@@ -216,103 +228,127 @@ function ipswIsCached($id) {
   return is_dir(CACHE_DIR . "/$id");
 }
 
-function cacheIpswContents($id, LoopInterface $loop, $downloadProgressCallback = null, $extractProgressCallback = null, $completedCallback = null, $errorCallback = null) {
+function cacheIpswContents($id, LoopInterface $loop) {
   global $db;
 
   updateExpireTimestamp($id);
 
-  if ($downloadProgressCallback === null) {
-    $downloadProgressCallback = function() {};
+  $job = getOngoingJob($id, "cache");
+  if ($job) {
+    return $job;
+  } else {
+    $job = addJob($id, "cache");
   }
-  if ($extractProgressCallback === null) {
-    $extractProgressCallback = function() {};
-  }
-  if ($completedCallback === null) {
-    $completedCallback = function() {};
-  }
-  if ($errorCallback === null) {
-    $errorCallback = function() {};
-  }
-
-  if (!array_key_exists($id, $db["ipsw"])) {
-    $errorCallback("Unknown IPSW ($id)");
-  }
-  if (!array_key_exists("url", $db["ipsw"][$id])) {
-    $errorCallback("This IPSW ($id) doesn't have a download URL");
-  }
-
   $cachePath = CACHE_DIR . "/$id";
 
-  $extract = function() use ($cachePath, $extractProgressCallback, $completedCallback, $errorCallback, &$loop) {
-    $ipsw = new ZipArchive;
-    if (!$ipsw->open("$cachePath/ipsw.zip")) {
-      $errorCallback("Failed to unzip IPSW");
-      return;
-    }
+  $extract = function() use ($cachePath, $job) {
+    $fileList = [];
+    exec("unzip -Z -1 " . escapeshellarg("$cachePath/ipsw.zip"), $fileList);
+    $totalFiles = count($fileList);
 
-    $totalFiles = $ipsw->numFiles;
-    $extractProgressCallback(0, $totalFiles);
+    publishJobProgress($job, "extracting", [
+      "files_extracted" => 0,
+      "files_total" => $totalFiles,
+      "steps_done" => 1,
+      "steps_total" => 2
+    ]);
 
-    $i = 0;
-    $timer = $loop->addPeriodicTimer(0, function() use (&$i, $ipsw, $totalFiles, $cachePath, $extractProgressCallback, $completedCallback, &$timer, &$loop) {
-      if ($i >= $totalFiles) {
-        chdir(__DIR__);
-        unlink("$cachePath/ipsw.zip");
-        $ipsw->close();
-        /** @disregard */
-        $loop->cancelTimer($timer);
-        $completedCallback();
-        return;
-      }
-      $ipsw->extractTo($cachePath, [$ipsw->getNameIndex($i)]);
-      $extractProgressCallback($i + 1, $totalFiles);
-      $i++;
+    $process = new Process("unzip -o " . escapeshellarg("$cachePath/ipsw.zip") . " -d " . escapeshellarg($cachePath));
+    $process->start();
+
+    $count = 0;
+    $process->stdout->on("data", function($output) use (&$count, $job, $totalFiles) {
+      $amount = substr_count($output, "inflating:") + substr_count($output, "creating:");
+      if ($amount < 1) return;
+
+      $count += $amount;
+      publishJobProgress($job, "extracting", [
+        "files_extracted" => $count,
+        "files_total" => $totalFiles,
+        "steps_done" => 1,
+        "steps_total" => 2
+      ]);
+    });
+
+    $process->on("exit", function() use ($cachePath, $job) {
+      unlink("$cachePath/ipsw.zip");
+
+      $process = new Process("chmod -R 775 " . escapeshellarg($cachePath));
+      $process->start();
+      $process->on("exit", function() use ($job) {
+        removeJob($job, data: [
+          "steps_done" => 2,
+          "steps_total" => 2
+        ]);
+      });
     });
   };
 
-  if (is_dir($cachePath)) {
-    if (is_file("$cachePath/ipsw.zip")) {
-      $extract();
-    } else {
-      $completedCallback();
+  $loop->futureTick(function() use ($id, $db, $cachePath, $extract, $job, $loop) {
+    if (!array_key_exists($id, $db["ipsw"])) {
+      removeJob($job, "Unknown IPSW ($id)");
+      return;
     }
-    return $cachePath;
-  }
+    if (!array_key_exists("url", $db["ipsw"][$id])) {
+      removeJob($job, "This IPSW ($id) doesn't have a download URL");
+      return;
+    }
 
-  mkdir($cachePath, recursive: true);
-
-  $ipswUrl = $db["ipsw"][$id]["url"];
-  $source = fopen($ipswUrl, "r");
-  $destination = fopen("$cachePath/ipsw.zip", "a");
-  
-  if ($source) {
-    $currentBytes = 0;
-    $totalBytes = get_headers($ipswUrl, true)["Content-Length"];
-    $prevCurrentBytes = 0;
-
-    $downloadProgressCallback(0, $totalBytes);
-
-    $timer = $loop->addPeriodicTimer(0, function() use (&$source, &$destination, &$currentBytes, &$prevCurrentBytes, $downloadProgressCallback, &$totalBytes, &$loop, &$timer, $extract) {
-      if (feof($source)) {
-        //$downloadProgressCallback($totalBytes, $totalBytes);
-        fclose($source);
-        fclose($destination);
-        /** @disregard */
-        $loop->cancelTimer($timer);
+    if (is_dir($cachePath)) {
+      if (is_file("$cachePath/ipsw.zip")) {
         $extract();
-        return;
+      } else {
+        removeJob($job, data: [
+          "steps_done" => 2,
+          "steps_total" => 2
+        ]);
       }
-    
-      $chunk = fread($source, 8192);
-      fwrite($destination, $chunk);
-      $currentBytes += strlen($chunk);
-      
-      if ($currentBytes >= $prevCurrentBytes + DOWNLOAD_PROGRESS_INTERVAL_BYTES) {
-        $downloadProgressCallback($currentBytes, $totalBytes);
-        $prevCurrentBytes = $currentBytes;
-      }
-    });
-  }
+      return;
+    }
 
-  return $cachePath;
+    mkdir($cachePath, recursive: true);
+
+    $ipswUrl = $db["ipsw"][$id]["url"];
+    $browser = new Browser($loop);
+    $destination = new WritableResourceStream(fopen("$cachePath/ipsw.zip", "wb"), $loop);
+    
+    $browser->requestStreaming("GET", $ipswUrl)->then(function(ResponseInterface $response) use ($destination, $job, $extract) {
+      $body = $response->getBody();
+      assert($body instanceof \React\Stream\ReadableStreamInterface);
+      
+      $currentBytes = 0;
+      $totalBytes = intval($response->getHeaderLine("Content-Length"));
+      $prevCurrentBytes = 0;
+
+      publishJobProgress($job, "downloading", [
+        "bytes_downloaded" => 0,
+        "bytes_total" => $totalBytes,
+        "steps_done" => 0,
+        "steps_total" => 2
+      ]);
+
+      $body->on("data", function($chunk) use (&$currentBytes, $totalBytes, &$prevCurrentBytes, $job, $destination, $body) {
+        $currentBytes += strlen($chunk);
+        $destination->write($chunk);
+
+        if ($currentBytes >= $prevCurrentBytes + DOWNLOAD_PROGRESS_INTERVAL_BYTES) {
+          publishJobProgress($job, "downloading", [
+            "bytes_downloaded" => $currentBytes,
+            "bytes_total" => $totalBytes,
+            "steps_done" => 0,
+            "steps_total" => 2
+          ]);
+          $prevCurrentBytes = $currentBytes;
+        }
+      });
+
+      $body->on("end", function() use ($destination) {
+        $destination->end();
+      });
+
+      $destination->on("close", $extract);
+    });
+  });
+
+  return $job;
 }

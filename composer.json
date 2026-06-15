@@ -2,6 +2,14 @@
     "require": {
         "flightphp/core": "^3.18",
         "cboden/ratchet": "^0.4.4",
-        "symfony/filesystem": "^7.4"
+        "symfony/filesystem": "^7.4",
+        "react/child-process": "^0.6.7",
+        "react/http": "^1.11.0",
+        "react/filesystem": "^0.1.2"
+    },
+    "config": {
+        "allow-plugins": {
+            "wyrihaximus/composer-update-bin-autoload-path": true
+        }
     }
 }

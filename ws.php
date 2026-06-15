@@ -16,9 +16,8 @@ use React\EventLoop\LoopInterface;
 
 class IpswWs implements MessageComponentInterface {
   protected $clients;
+  protected $clientsWithJobs;
   public LoopInterface $loop;
-  protected $progress_current;
-  protected $progress_total;
 
   private function sendStatus(ConnectionInterface $conn, $status, $message = null, $extra_fields = []) {
     $conn->send(json_encode([
@@ -26,9 +25,24 @@ class IpswWs implements MessageComponentInterface {
     ] + (($message != null) ? ["message" => $message] : []) + $extra_fields));
   }
 
+  private function setHasJob(ConnectionInterface $conn, $status = null) {
+    if ($status) {
+      if ($status == "done" || $status == "error") {
+        unset($this->clientsWithJobs[array_search($conn, $this->clientsWithJobs)]);
+      }
+      return;
+    }
+
+    if (in_array($conn, $this->clientsWithJobs)) return false;
+    array_push($this->clientsWithJobs, $conn);
+
+    return true;
+  }
+
   public function __construct()
   {
     $this->clients = new SplObjectStorage();
+    $this->clientsWithJobs = [];
   }
 
   public function onOpen(ConnectionInterface $conn) {
@@ -53,28 +67,14 @@ class IpswWs implements MessageComponentInterface {
 
     switch ($command) {
       case "cache":
-        cacheIpswContents($ipswId, $this->loop, function($current, $total) use ($from) {
-          $this->sendStatus($from, "downloading", null, [
-            "bytes_downloaded" => $current,
-            "bytes_total" => $total,
-            "steps_done" => 0,
-            "steps_total" => 2
-          ]);
-        }, function($current, $total) use ($from) {
-          $this->sendStatus($from, "extracting", null, [
-            "files_extracted" => $current,
-            "files_total" => $total,
-            "steps_done" => 1,
-            "steps_total" => 2
-          ]);
-        }, function() use ($from) {
-          $this->sendStatus($from, "done", null, [
-            "steps_done" => 2,
-            "steps_total" => 2
-          ]);
-        }, function($error) use ($from) {
-          $this->sendStatus($from, "error", $error);
+        if (!$this->setHasJob($from)) return;
+
+        $job = cacheIpswContents($ipswId, $this->loop);
+        subscribeToJobAsync($job, function($status, $data) use ($from) {
+          $this->setHasJob($from, $status);
+          $this->sendStatus($from, $status, extra_fields: $data);
         });
+
         break;
       
       case "listing":
@@ -98,24 +98,17 @@ class IpswWs implements MessageComponentInterface {
         if (is_dir($location)) {
           $this->sendStatus($from, "listing", null, getDirListing($location));
         } elseif ($dmgToExtract) {
-          extractDmg($dmgToExtract, $this->loop, function($current, $total) use ($from) {
-            $this->sendStatus($from, "decrypting", [
-              "bytes_decrypted" => $current,
-              "bytes_total" => $total,
-              "steps_done" => 0,
-              "steps_total" => 2
-            ]);
-          }, function($percent) use ($from) {
-            $this->sendStatus($from, "extracting", [
-              "percent_completed" => $percent,
-              "steps_done" => 1,
-              "steps_total" => 2
-            ]);
-          }, function() use ($from, $location) {
-            $this->sendStatus($from, "listing", null, getDirListing($location));
-          }, function($error) use ($from) {
-            $this->sendStatus($from, "error", $error);
-          });
+          if (!$this->setHasJob($from)) return;
+
+          $job = extractDmg($dmgToExtract, $this->loop);
+          subscribeToJobAsync($job, function($status, $data) use ($from, $location) {
+            $this->setHasJob($from, $status);
+            if ($status == "done") {
+              $this->sendStatus($from, "listing", null, getDirListing($location));
+            } else {
+              $this->sendStatus($from, $status, extra_fields: $data);
+            }
+          }, $this->loop);
         } elseif (!is_file($location)) {
           $this->sendStatus($from, "error", "File/directory not found");
         } else {
