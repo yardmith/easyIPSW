@@ -13,11 +13,10 @@ require_once "cache_utils.php";
 require_once "job_utils.php";
 
 function pathNeedsDmgExtraction($path) {
-  if (!str_contains($path, ".dmg")) {
-    return false;
-  }
-  $dmgPath = explode(".dmg", $path)[0] . ".dmg";
-  if (is_dir($dmgPath)) return false;
+  if (!str_contains($path, ".dmg")) return false;
+  $parts = explode(".dmg", $path);
+  $dmgPath = $parts[0] . ".dmg";
+  if (is_dir($dmgPath) || in_array($parts[1], ["", "/"])) return false;
   return $dmgPath;
 }
 
