@@ -7,9 +7,8 @@ use React\Http\Browser;
 use React\Stream\WritableResourceStream;
 use Symfony\Component\Filesystem\Path;
 
-require_once "db.php";
+require_once "db_utils.php";
 require_once "constants.php";
-require_once "cache_utils.php";
 require_once "job_utils.php";
 
 function pathNeedsDmgExtraction($path) {
@@ -52,31 +51,19 @@ function getIpswIdFromPath($path) {
   return $pathParts[$cacheIdx + 1];
 }
 
-function getKeysFromPath($path) {
-  global $db;
-
-  $pathParts = explode("/", $path);
-  $cacheIdx = array_search(CACHE_DIR_NAME, $pathParts);
-  if ($cacheIdx === false || count($pathParts) <= $cacheIdx + 1) {
-    return false;
-  }
-
-  $ipswId = $pathParts[$cacheIdx + 1];
+function getKeyFromPath($path) {
+  $ipswId = getIpswIdFromPath($path);
+  if (!$ipswId) return false;
   $filename = basename($path);
-  if (!array_key_exists("keys", $db["ipsw"][$ipswId]) || !array_key_exists($filename, $db["ipsw"][$ipswId]["keys"])) {
-    return false;
-  }
 
-  return $db["ipsw"][$ipswId]["keys"][$filename];
+  return getKeyForIpswFile($ipswId, $filename);
 }
 
 function decryptImg($path) {
   $type = identifyImg($path);
 
-  if ($type > 2) {
-    $keys = getKeysFromPath($path);
-    if (!$keys) return false;
-  }
+  $keys = getKeyFromPath($path);
+  if (!$keys && $type > 2) return false;
 
   rename($path, "$path.original");
   $result_code = null;
@@ -88,10 +75,10 @@ function decryptImg($path) {
       exec(BIN_DIR . "xpwntool $encPath $pathEsc", result_code: $result_code);
       break;
     case 3:
-      exec(BIN_DIR . "xpwntool $encPath $pathEsc -k " . $keys["key"] . " -iv " . $keys["iv"], result_code: $result_code);
+      exec(BIN_DIR . "xpwntool $encPath $pathEsc -k " . $keys->key . " -iv " . $keys->iv, result_code: $result_code);
       break;
     case 4:
-      exec(BIN_DIR . "img4 -i $encPath -o $pathEsc -k " . $keys["iv"] . $keys["key"], result_code: $result_code);
+      exec(BIN_DIR . "img4 -i $encPath -o $pathEsc -k " . $keys->iv . $keys->key, result_code: $result_code);
       break;
     default:
       return false;
@@ -161,7 +148,7 @@ function extractDmg($path, LoopInterface $loop) {
       }
       $extract();
     } else {
-      $keys = getKeysFromPath($path);
+      $keys = getKeyFromPath($path);
       if (!$keys) {
         removeJob($job, "No keys found");
         return;
@@ -228,8 +215,6 @@ function ipswIsCached($id) {
 }
 
 function cacheIpswContents($id, LoopInterface $loop) {
-  global $db;
-
   updateExpireTimestamp($id);
 
   $job = getOngoingJob($id, "cache");
@@ -283,12 +268,14 @@ function cacheIpswContents($id, LoopInterface $loop) {
     });
   };
 
-  $loop->futureTick(function() use ($id, $db, $cachePath, $extract, $job, $loop) {
-    if (!array_key_exists($id, $db["ipsw"])) {
+  $loop->futureTick(function() use ($id, $cachePath, $extract, $job, $loop) {
+    $info = getIpswInfo($id);
+
+    if (!$info) {
       removeJob($job, "Unknown IPSW ($id)");
       return;
     }
-    if (!array_key_exists("url", $db["ipsw"][$id])) {
+    if (!$info->url) {
       removeJob($job, "This IPSW ($id) doesn't have a download URL");
       return;
     }
@@ -307,7 +294,7 @@ function cacheIpswContents($id, LoopInterface $loop) {
 
     mkdir($cachePath, recursive: true);
 
-    $ipswUrl = $db["ipsw"][$id]["url"];
+    $ipswUrl = $info->url;
     $browser = new Browser($loop);
     $destination = new WritableResourceStream(fopen("$cachePath/ipsw.zip", "wb"), $loop);
     

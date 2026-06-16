@@ -3,8 +3,7 @@
 chdir(__DIR__);
 
 require_once "constants.php";
-require_once "db.php";
-require_once "cache_utils.php";
+require_once "db_utils.php";
 require_once "job_utils.php";
 
 if (PHP_SAPI !== "cli") {
@@ -22,7 +21,7 @@ if (in_array("-h", $argv) || in_array("--help", $argv)) {
   exit;
 }
 
-foreach ($db["cache"] as $dir => $expires) {
+foreach (getCacheEntries() as $dir => $expires) {
   if (time() < $expires && !in_array("-a", $argv) && !in_array("--all", $argv)) continue;
 
   purgeJobs($dir);

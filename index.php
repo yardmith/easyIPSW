@@ -4,22 +4,22 @@ use React\EventLoop\Loop;
 
 require_once "vendor/autoload.php";
 require_once "constants.php";
-require_once "db.php";
+require_once "db_utils.php";
 require_once "ipsw_utils.php";
 
 Flight::set("flight.debug", DEBUG);
 
 Flight::route("/@id/download", function($id) {
-  global $db;
+  $info = getIpswInfo($id);
 
-  if (!array_key_exists($id, $db["ipsw"])) {
+  if (!$info) {
     Flight::halt(404, "Unknown IPSW ($id)");
   }
-  if (!array_key_exists("url", $db["ipsw"][$id])) {
+  if (!$info->url) {
     Flight::halt(500, "This IPSW ($id) doesn't have a download URL");
   }
 
-  Flight::redirect($db["ipsw"][$id]["url"]);
+  Flight::redirect($info->url);
 });
 
 Flight::route("/@id/raw/*", function($id) {

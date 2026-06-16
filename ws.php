@@ -5,7 +5,7 @@ chdir(__DIR__);
 require_once "vendor/autoload.php";
 require_once "constants.php";
 require_once "ipsw_utils.php";
-require_once "db.php";
+require_once "db_utils.php";
 
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
@@ -46,12 +46,10 @@ class IpswWs implements MessageComponentInterface {
   }
 
   public function onOpen(ConnectionInterface $conn) {
-    global $db;
-
     $requestUri = $conn->httpRequest->getUri();
     $ipswId = explode("/", $requestUri)[3];
 
-    if (!array_key_exists($ipswId, $db["ipsw"])) {
+    if (!getIpswInfo($ipswId)) {
       $this->sendStatus($conn, "error", "Unknown IPSW ($ipswId)");
       $conn->close();
     }

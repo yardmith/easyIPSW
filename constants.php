@@ -1,7 +1,7 @@
 <?php
 
 const DEBUG = true;
-const DB_DIR = __DIR__ . "/db";
+const DB_FILENAME = "db.sqlite";
 const WS_PORT = 8081;
 const CACHE_DIR_NAME = "cache";
 const CACHE_DIR = __DIR__ . "/" . CACHE_DIR_NAME;
