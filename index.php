@@ -61,7 +61,7 @@ Flight::route("/@id/raw/*", function($id) {
   subscribeToJobAsync($cacheJob, function($status, $data) use ($cachePath, $serveFile) {
     if ($status == "done") {
       $dmgToExtract = pathNeedsDmgExtraction($cachePath);
-      if ($dmgToExtract) {
+      if ($dmgToExtract && !(str_ends_with($cachePath, ".dmg") || str_ends_with($cachePath, ".dmg/")) ) {
         $dmgJob = extractDmg($dmgToExtract, Loop::get());
         subscribeToJobAsync($dmgJob, function($status, $data) use ($serveFile) {
           if ($status == "done") {

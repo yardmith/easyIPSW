@@ -16,7 +16,7 @@ function pathNeedsDmgExtraction($path) {
   if (!str_contains($path, ".dmg")) return false;
   $parts = explode(".dmg", $path);
   $dmgPath = $parts[0] . ".dmg";
-  if (is_dir($dmgPath) || in_array($parts[1], ["", "/"])) return false;
+  if (is_dir($dmgPath)) return false;
   return $dmgPath;
 }
 
