@@ -1,6 +1,6 @@
 <?php
 
-use React\ChildProcess\Process;
+use CFPropertyList\CFPropertyList;
 use React\EventLoop\Loop;
 
 require_once "vendor/autoload.php";
@@ -36,6 +36,7 @@ Flight::route("/@id/raw/*", function($id) {
     $defry = isset($query->defry);
     $decrypt = isset($query->decrypt);
     $png = isset($query->png);
+    $xml = isset($query->xml);
 
     if ($defry && pathinfo($cachePath, PATHINFO_EXTENSION) == "png") {
       if (!is_file("$cachePath.defried")) {
@@ -88,8 +89,8 @@ Flight::route("/@id/raw/*", function($id) {
         if ($imgType < 4) {
           $actualPath = is_file($cachePath) ? $cachePath : "$cachePath.original";
           if ($imgType > 2) {
-          $key = getKeyFromPath($cachePath);
-          if (!$key) Flight::halt(404, "No decryption key for this file was found");
+            $key = getKeyFromPath($cachePath);
+            if (!$key) Flight::halt(404, "No decryption key for this file was found");
             $keyString = " " . escapeshellarg($key["iv"]) . " " . escapeshellarg($key["key"]);
           } else {
             $keyString = "";
@@ -115,6 +116,15 @@ Flight::route("/@id/raw/*", function($id) {
 
       /** @disregard */
       Flight::download("$cachePath.pngified", basename($cachePath) . ".png");
+      return;
+    }
+    if ($xml && file_get_contents($cachePath, length: 6) == "bplist") {
+      if (!is_file("$cachePath.xmlified")) {
+        $plist = new CFPropertyList($cachePath);
+        $plist->saveXML("$cachePath.xmlified", true);
+      }
+      /** @disregard */
+      Flight::download("$cachePath.xmlified", basename($cachePath));
       return;
     }
     if (is_file("$cachePath.original")) {

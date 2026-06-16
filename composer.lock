@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9884b697eea68dd557486779281099d1",
+    "content-hash": "c7776123cfd1f0417e74bb5663b30ed6",
     "packages": [
         {
             "name": "cakephp/core",
@@ -1736,6 +1736,84 @@
                 }
             ],
             "time": "2024-06-11T12:45:25+00:00"
+        },
+        {
+            "name": "rodneyrehm/plist",
+            "version": "v2.0.5",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/moodlehq/CFPropertyList.git",
+                "reference": "e3a09679d7c020c56f13a8200d50816b3c326733"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/moodlehq/CFPropertyList/zipball/e3a09679d7c020c56f13a8200d50816b3c326733",
+                "reference": "e3a09679d7c020c56f13a8200d50816b3c326733",
+                "shasum": ""
+            },
+            "require": {
+                "ext-dom": "*",
+                "ext-libxml": "*",
+                "php": "^7.4 || ^8.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.6.22",
+                "squizlabs/php_codesniffer": "^3.2"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "CFPropertyList\\": "src/CFPropertyList/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Andrew Lyons",
+                    "email": "andrew.lyons@moodle.com",
+                    "role": "developer"
+                },
+                {
+                    "name": "Andrew Gosali",
+                    "email": "andrew.gosali@moodle.com",
+                    "role": "developer"
+                },
+                {
+                    "name": "Christian Kruse",
+                    "email": "cjk@wwwtech.de",
+                    "role": "developer"
+                },
+                {
+                    "name": "Rodney Rehm",
+                    "email": "mail+github@rodneyrehm.de",
+                    "role": "developer"
+                },
+                {
+                    "name": "Thierry Bugier",
+                    "email": "tbugier@teclib.com",
+                    "role": "developer"
+                }
+            ],
+            "description": "Library for reading and writing Apple's CFPropertyList (plist) files in XML as well as binary format.",
+            "homepage": "https://github.com/moodlehq/CFPropertyList",
+            "keywords": [
+                "CFPropertyList",
+                "Core Foundation",
+                "apple",
+                "binary",
+                "plist",
+                "xml"
+            ],
+            "support": {
+                "docs": "https://moodlehq.github.io/CFPropertyList/howtos/",
+                "issues": "https://github.com/moodlehq/CFPropertyList/issues",
+                "rss": "https://moodlehq.github.io/CFPropertyList/feed.xml",
+                "source": "https://github.com/moodlehq/CFPropertyList"
+            },
+            "time": "2025-02-17T03:42:49+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",

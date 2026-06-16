@@ -5,7 +5,8 @@
         "symfony/filesystem": "^7.4",
         "react/child-process": "^0.6.7",
         "react/http": "^1.11.0",
-        "react/filesystem": "^0.1.2"
+        "react/filesystem": "^0.1.2",
+        "rodneyrehm/plist": "^2.0"
     },
     "config": {
         "allow-plugins": {
