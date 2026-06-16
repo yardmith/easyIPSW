@@ -1,5 +1,6 @@
 <?php
 
+use React\ChildProcess\Process;
 use React\EventLoop\Loop;
 
 require_once "vendor/autoload.php";
@@ -31,13 +32,10 @@ Flight::route("/@id/raw/*", function($id) {
   }
 
   $serveFile = function() use ($cachePath, $path) {
-    $defry = isset(Flight::request()->query->defry);
+    $query = Flight::request()->query;
+    $defry = isset($query->defry);
+    $decrypt = isset($query->decrypt);
 
-    if (is_file("$cachePath.original")) {
-      /** @disregard */
-      Flight::download("$cachePath.original", basename($cachePath));
-      return;
-    }
     if ($defry && pathinfo($cachePath, PATHINFO_EXTENSION) == "png") {
       if (!is_file("$cachePath.defried")) {
         exec(BIN_DIR . "pngdefry -s .defried " . escapeshellarg($cachePath));
@@ -45,6 +43,46 @@ Flight::route("/@id/raw/*", function($id) {
       }
       /** @disregard */
       Flight::download("$cachePath.defried", basename($cachePath));
+      return;
+    }
+    if ($decrypt) {
+      $extension = pathinfo($cachePath, PATHINFO_EXTENSION);
+
+      if (!is_file("$cachePath.decrypted") && !is_dir($cachePath)) {
+        if (identifyImg($cachePath)) {
+          $result = decryptImg($cachePath);
+          if ($result === null) {
+            Flight::halt(404, "No decryption key for this file was found");
+          } elseif ($result === false) {
+            Flight::halt(500, "Failed to decrypt IMG");
+          }
+        } elseif ($extension == "dmg") {
+          $decryptJob = decryptRootFsDmg($cachePath, Loop::get());
+          subscribeToJobAsync($decryptJob, function($status, $data) use ($cachePath) {
+            if ($status == "done") {
+              /** @disregard */
+              Flight::download("$cachePath.decrypted", basename($cachePath));
+            } elseif ($status == "error") {
+              Flight::halt(isset($data["code"]) ? $data["code"] : 500, $data["message"]);
+            }
+          });
+          return;
+        } elseif ($extension == "aea") {
+          // TODO
+        } else {
+          Flight::halt(400, "?decrypt can only be used for DMGs, IMG2/IMG3/IMG4, or AEAs");
+        }
+      }
+
+      if (is_file("$cachePath.decrypted")) {
+        /** @disregard */
+        Flight::download("$cachePath.decrypted", basename($cachePath));
+        return;
+      }
+    }
+    if (is_file("$cachePath.original")) {
+      /** @disregard */
+      Flight::download("$cachePath.original", basename($cachePath));
       return;
     }
 

@@ -63,22 +63,22 @@ function decryptImg($path) {
   $type = identifyImg($path);
 
   $keys = getKeyFromPath($path);
-  if (!$keys && $type > 2) return false;
+  if (!$keys && $type > 2) return;
 
   rename($path, "$path.original");
   $result_code = null;
-  $pathEsc = escapeshellarg($path);
+  $decPath = escapeshellarg("$path.decrypted");
   $encPath = escapeshellarg("$path.original");
 
   switch ($type) {
     case 2:
-      exec(BIN_DIR . "xpwntool $encPath $pathEsc", result_code: $result_code);
+      exec(BIN_DIR . "xpwntool $encPath $decPath", result_code: $result_code);
       break;
     case 3:
-      exec(BIN_DIR . "xpwntool $encPath $pathEsc -k " . $keys->key . " -iv " . $keys->iv, result_code: $result_code);
+      exec(BIN_DIR . "xpwntool $encPath $decPath -k " . $keys->key . " -iv " . $keys->iv, result_code: $result_code);
       break;
     case 4:
-      exec(BIN_DIR . "img4 -i $encPath -o $pathEsc -k " . $keys->iv . $keys->key, result_code: $result_code);
+      exec(BIN_DIR . "img4 -i $encPath -o $decPath -k " . $keys->iv . $keys->key, result_code: $result_code);
       break;
     default:
       return false;
@@ -88,6 +88,56 @@ function decryptImg($path) {
     rename("$path.original", $path);
     return false;
   }
+
+  return true;
+}
+
+function decryptRootFsDmg($path, LoopInterface $loop) {
+  $ipswId = getIpswIdFromPath($path);
+  updateExpireTimestamp($ipswId);
+
+  $jobData = ["filename" => basename($path)];
+  $job = getOngoingJob($ipswId, "decryptRootFs", $jobData);
+  if ($job) {
+    return $job;
+  } else {
+    $job = addJob($ipswId, "decryptRootFs", $jobData);
+  }
+
+  $loop->futureTick(function() use ($path, $job) {
+    $keys = getKeyFromPath($path);
+    if (!$keys) {
+      removeJob($job, "No decryption key for this file was found", ["code" => 404]);
+      return;
+    }
+    rename($path, "$path.original");
+
+    $process = new Process(BIN_DIR . "dmg extract " . escapeshellarg("$path.original") . " " . escapeshellarg("$path.decrypted") . " -k " . $keys["key"]);
+    $process->start();
+    $prevOffset = 0;
+    $fileSize = filesize("$path.original");
+
+    $process->stdout->on("data", function($output) use (&$prevOffset, $job, $fileSize) {
+      if (!str_contains($output, "fileOffset=")) return;
+
+      $chunks = explode("fileOffset=", $output);
+      $fileOffset = hexdec(explode("\n", $chunks[array_key_last($chunks) - 1])[0]);
+      if ($fileOffset < $prevOffset + DOWNLOAD_PROGRESS_INTERVAL_BYTES) return;
+
+      publishJobProgress($job, "decrypting", [
+        "bytes_decrypted" => $fileOffset,
+        "bytes_total" => $fileSize
+      ]);
+
+      $prevOffset = $fileOffset;
+    });
+
+    $process->on("exit", function() use ($job) {
+      removeJob($job);
+    });
+  });
+
+  return $job;
 }
 
 function extractDmg($path, LoopInterface $loop) {
@@ -103,10 +153,18 @@ function extractDmg($path, LoopInterface $loop) {
   }
 
   $extract = function() use ($path, $job) {
+    if (is_dir($path)) {
+      removeJob($job, data: [
+        "steps_done" => 2,
+        "steps_total" => 2
+      ]);
+      return;
+    }
+
     $dirname = dirname($path);
     $oldList = scandir($dirname);
 
-    $process = new Process(BIN_DIR . "7zz x -o" . escapeshellarg($dirname) . " -y -bso2 -bse2 -bsp1 " . escapeshellarg($path) . " 2> /dev/null");
+    $process = new Process(BIN_DIR . "7zz x -o" . escapeshellarg($dirname) . " -y -bso2 -bse2 -bsp1 " . escapeshellarg("$path.decrypted") . " 2> /dev/null");
     $process->start();
     $prevPercent = null;
 
@@ -126,7 +184,6 @@ function extractDmg($path, LoopInterface $loop) {
 
     $process->on("exit", function() use ($dirname, $oldList, $path, $job) {
       $dir = array_values(array_diff(scandir($dirname), $oldList))[0];
-      unlink($path);
       rename($dirname . "/$dir", $path);
 
       $process = new Process("chown -R :" . escapeshellarg(SHARED_OWNERSHIP_GROUP) . " " . escapeshellarg($path) . " && chmod -R 775 " . escapeshellarg($path));
@@ -140,44 +197,29 @@ function extractDmg($path, LoopInterface $loop) {
     });
   };
   
-  $loop->futureTick(function() use ($path, $extract, $job) {
-    if (identifyImg($path) !== false) {
+  $loop->futureTick(function() use ($path, $extract, $job, $loop) {
+    if (is_file("$path.decrypted")) {
+      $extract();
+    } elseif (identifyImg($path) !== false) {
       if (decryptImg($path) === false) {
         removeJob($job, "Failed to decrypt DMG");
         return;
       }
       $extract();
     } else {
-      $keys = getKeyFromPath($path);
-      if (!$keys) {
-        removeJob($job, "No keys found");
-        return;
-      }
-      rename($path, "$path.original");
-
-      $process = new Process(BIN_DIR . "dmg extract " . escapeshellarg("$path.original") . " " . escapeshellarg($path) . " -k " . $keys["key"]);
-      $process->start();
-      $prevOffset = 0;
-      $fileSize = filesize("$path.original");
-
-      $process->stdout->on("data", function($output) use (&$prevOffset, $job, $fileSize) {
-        if (!str_contains($output, "fileOffset=")) return;
-
-        $chunks = explode("fileOffset=", $output);
-        $fileOffset = hexdec(explode("\n", $chunks[array_key_last($chunks) - 1])[0]);
-        if ($fileOffset < $prevOffset + DOWNLOAD_PROGRESS_INTERVAL_BYTES) return;
-
-        publishJobProgress($job, "decrypting", [
-          "bytes_decrypted" => $fileOffset,
-          "bytes_total" => $fileSize,
-          "steps_done" => 0,
-          "steps_total" => 2
-        ]);
-
-        $prevOffset = $fileOffset;
-      });
-
-      $process->on("exit", $extract);
+      $decryptJob = decryptRootFsDmg($path, $loop);
+      subscribeToJobAsync($decryptJob, function($status, $data) use ($job, $extract) {
+        if ($status == "done") {
+          $extract();
+        } elseif ($status == "error") {
+          removeJob($job, $data["message"]);
+        } else {
+          publishJobProgress($job, $status, $data + [
+            "steps_done" => 0,
+            "steps_total" => 2
+          ]);
+        }
+      }, $loop);
     }
   });
   
