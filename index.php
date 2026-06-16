@@ -24,7 +24,7 @@ Flight::route("/@id/download", function($id) {
 });
 
 Flight::route("/@id/raw/*", function($id) {
-  $path = explode("/$id/raw", parse_url(Flight::request()->getFullUrl(), PHP_URL_PATH))[1];
+  $path = urldecode(explode("/$id/raw", parse_url(Flight::request()->getFullUrl(), PHP_URL_PATH))[1]);
   $cachePath = CACHE_DIR . "/$id$path";
 
   if (!getIpswIdFromPath($cachePath)) {
@@ -35,6 +35,7 @@ Flight::route("/@id/raw/*", function($id) {
     $query = Flight::request()->query;
     $defry = isset($query->defry);
     $decrypt = isset($query->decrypt);
+    $png = isset($query->png);
 
     if ($defry && pathinfo($cachePath, PATHINFO_EXTENSION) == "png") {
       if (!is_file("$cachePath.defried")) {
@@ -79,6 +80,42 @@ Flight::route("/@id/raw/*", function($id) {
         Flight::download("$cachePath.decrypted", basename($cachePath));
         return;
       }
+    }
+    if ($png && (identifyImg($cachePath) | identifyImg("$cachePath.original")) ) {
+      $imgType = is_file($cachePath) ? identifyImg($cachePath) : identifyImg("$cachePath.original");
+
+      if (!is_file("$cachePath.pngified")) {
+        if ($imgType < 4) {
+          $actualPath = is_file($cachePath) ? $cachePath : "$cachePath.original";
+          if ($imgType > 2) {
+          $key = getKeyFromPath($cachePath);
+          if (!$key) Flight::halt(404, "No decryption key for this file was found");
+            $keyString = " " . escapeshellarg($key["iv"]) . " " . escapeshellarg($key["key"]);
+          } else {
+            $keyString = "";
+          }
+          $output = [];
+          exec(BIN_DIR . "imagetool extract " . escapeshellarg($actualPath) . " " . escapeshellarg("$cachePath.pngified") . $keyString, $output);
+          if (str_contains($output[0], "error converting img to png")) {
+            unlink("$cachePath.pngified");
+            Flight::halt(500, "Failed to convert IMG to PNG. This IMG likely doesn't contain a viewable image.");
+          }
+        } else {
+          if (!is_file("$cachePath.decrypted")) {
+            $result = decryptImg($cachePath);
+            if ($result === null) {
+              Flight::halt(404, "No decryption key for this file was found");
+            } elseif ($result === false) {
+              Flight::halt(500, "Failed to decrypt IMG");
+            }
+          }
+          exec(BIN_DIR . "ibootim " . escapeshellarg("$cachePath.decrypted") . " " . escapeshellarg("$cachePath.pngified"));
+        }
+      }
+
+      /** @disregard */
+      Flight::download("$cachePath.pngified", basename($cachePath) . ".png");
+      return;
     }
     if (is_file("$cachePath.original")) {
       /** @disregard */

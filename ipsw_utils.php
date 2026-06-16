@@ -20,6 +20,8 @@ function pathNeedsDmgExtraction($path) {
 }
 
 function identifyImg($path) {
+  if (!is_file($path)) return false;  
+
   $start = file_get_contents($path, length: 10);
 
   if (str_starts_with($start, "8900")) {
