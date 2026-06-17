@@ -37,6 +37,7 @@ Flight::route("/@id/raw/*", function($id) {
     $decrypt = isset($query->decrypt);
     $png = isset($query->png);
     $xml = isset($query->xml);
+    $json = isset($query->json);
 
     if ($defry && pathinfo($cachePath, PATHINFO_EXTENSION) == "png") {
       if (!is_file("$cachePath.defried")) {
@@ -125,6 +126,16 @@ Flight::route("/@id/raw/*", function($id) {
       }
       /** @disregard */
       Flight::download("$cachePath.xmlified", basename($cachePath));
+      return;
+    }
+    if ($json && (pathinfo($cachePath, PATHINFO_EXTENSION) == "plist" || str_contains(file_get_contents($cachePath), "!DOCTYPE plist") || file_get_contents($cachePath, length: 6) == "bplist")) {
+      if (!is_file("$cachePath.jsonified")) {
+        $plist = new CFPropertyList($cachePath);
+        $array = $plist->toArray();
+        file_put_contents("$cachePath.jsonified", json_encode($array, JSON_PRETTY_PRINT));
+      }
+      /** @disregard */
+      Flight::download("$cachePath.jsonified", basename($cachePath) . ".json");
       return;
     }
     if (is_file("$cachePath.original")) {
