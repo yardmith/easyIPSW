@@ -1,5 +1,6 @@
 <?php
 
+use CFPropertyList\CFPropertyList;
 use Psr\Http\Message\ResponseInterface;
 use React\ChildProcess\Process;
 use React\EventLoop\LoopInterface;
@@ -228,7 +229,7 @@ function extractDmg($path, LoopInterface $loop) {
   return $job;
 }
 
-function getDirListing($path) {
+function getDirListing($path, $includeTags = true) {
   if (!$ipswId = getIpswIdFromPath($path)) {
     return false;
   }
@@ -251,7 +252,93 @@ function getDirListing($path) {
     }
   }
 
-  return ["files" => $files, "directories" => $dirs];
+  $result = ["files" => $files, "directories" => $dirs];
+
+  if ($includeTags) {
+    $tags = [];
+    $cachePath = CACHE_DIR . "/$ipswId";
+    
+    // For some reason, the first IPSWs to have BuildManifests had them named "BuildManifesto" instead.
+    $buildManifest = null;
+    if (is_file("$cachePath/BuildManifest.plist")) {
+      $buildManifest = (new CFPropertyList("$cachePath/BuildManifest.plist"))->toArray();
+    } elseif (is_file("$cachePath/BuildManifesto.plist")) {
+      $buildManifest = (new CFPropertyList("$cachePath/BuildManifesto.plist"))->toArray();
+    }
+
+    if ($buildManifest) {
+      $restoreManifest = null;
+      $updateManifest = null;
+      foreach ($buildManifest["BuildIdentities"] as $id) {
+        if ($id["Info"]["RestoreBehavior"] == "Erase")
+          $restoreManifest = $id["Manifest"];
+        elseif ($id["Info"]["RestoreBehavior"] == "Update")
+          $updateManifest = $id["Manifest"];
+      }
+
+      foreach ($restoreManifest as $name => $info) {
+        $filename = basename($info["Info"]["Path"]);
+        $tag = match ($name) {
+          "AppleLogo" => "applelogo",
+          "BatteryCharging", "BatteryCharging0", "BatteryCharging1", "BatteryFull", "BatteryLow0", "BatteryLow1", "BatteryPlugin", "RecoveryMode" => "ibootim",
+          "DeviceTree" => "devicetree",
+          "KernelCache" => "kernelcache",
+          "LLB" => "llb",
+          "OS" => "rootfs",
+          "RestoreRamDisk" => "ramdisk_restore",
+          "iBEC" => "ibec",
+          "iBSS" => "ibss",
+          "iBoot" => "iboot",
+          default => null
+        };
+
+        if (in_array($tag, ["llb", "ibec", "ibss"])) {
+          $tag .= "|" . $info["BuildString"];
+        }
+
+        if ($tag) $tags[$filename] = $tag;
+      }
+
+      $tags[$updateManifest["RestoreRamDisk"]["Info"]["Path"]] = "ramdisk_update";
+    } elseif (is_file("$cachePath/Restore.plist")) {
+      // Fall back to Restore.plist, which even the oldest IPSWs have
+      $restorePlist = (new CFPropertyList("$cachePath/Restore.plist"))->toArray();
+
+      if (isset($restorePlist["KernelCachesByPlatform"])) {
+        foreach ($restorePlist["KernelCachesByPlatform"] as $list) {
+          foreach ($list as $filename) {
+            $tags[$filename] = "kernelcache";
+          }
+        }
+      } elseif (isset($restorePlist["RestoreKernelCaches"])) {
+        foreach ($restorePlist["RestoreKernelCaches"] as $filename) {
+          $tags[$filename] = "kernelcache";
+        }
+      }
+
+      if (isset($restorePlist["RamDisksByPlatform"])) {
+        foreach ($restorePlist["KernelCachesByPlatform"] as $list) {
+          foreach ($list as $type => $filename) {
+            $tags[$filename] = "ramdisk_" . ($type == "Update" ? "update" : "restore");
+          }
+        }
+      } elseif (isset($restorePlist["RestoreRamDisks"])) {
+        foreach ($restorePlist["RestoreRamDisks"] as $type => $filename) {
+          $tags[$filename] = "ramdisk_" . ($type == "Update" ? "update" : "restore");
+        }
+      }
+
+      if (isset($restorePlist["SystemRestoreImages"])) {
+        foreach ($restorePlist["SystemRestoreImages"] as $filename) {
+          $tags[$filename] = "rootfs";
+        }
+      }
+    }
+
+    $result += ["tags" => $tags];
+  }
+
+  return $result;
 }
 
 function ipswIsCached($id) {
