@@ -353,6 +353,24 @@ function ipswIsCached($id) {
   return is_dir(CACHE_DIR . "/$id");
 }
 
+function unitsStringToBytes($string) {
+  if (str_contains($string, "GiB")) {
+    $units = "GiB";
+    $mult = 1024 * 1024 * 1024;
+  } elseif (str_contains($string, "MiB")) {
+    $units = "MiB";
+    $mult = 1024 * 1024;
+  } elseif (str_contains($string, "KiB")) {
+    $units = "KiB";
+    $mult = 1024;
+  } else {
+    $units = "B";
+    $mult = 1;
+  }
+
+  return intval(str_replace([$units, " "], "", $string)) * $mult;
+}
+
 function cacheIpswContents($id, LoopInterface $loop) {
   updateExpireTimestamp($id);
 
@@ -365,29 +383,32 @@ function cacheIpswContents($id, LoopInterface $loop) {
   $cachePath = CACHE_DIR . "/$id";
 
   $extract = function() use ($cachePath, $job) {
-    $fileList = [];
-    exec("unzip -Z -1 " . escapeshellarg("$cachePath/ipsw.zip"), $fileList);
-    $totalFiles = count($fileList);
+    $totalBytes = filesize("$cachePath/ipsw.zip");
+    $prevCurrentBytes = 0;
 
     publishJobProgress($job, "extracting", [
-      "files_extracted" => 0,
-      "files_total" => $totalFiles,
+      "bytes_extracted" => 0,
+      "bytes_total" => $totalBytes,
       "steps_done" => 1,
       "steps_total" => 2
     ]);
 
-    $process = new Process("unzip -o " . escapeshellarg("$cachePath/ipsw.zip") . " -d " . escapeshellarg($cachePath));
+    $process = new Process("script -q -c \"" . BIN_DIR . "ripunzip uf " . escapeshellarg("$cachePath/ipsw.zip") . " -d " . escapeshellarg($cachePath) . "\" /dev/null");
     $process->start();
 
-    $count = 0;
-    $process->stdout->on("data", function($output) use (&$count, $job, $totalFiles) {
-      $amount = substr_count($output, "inflating:") + substr_count($output, "creating:");
-      if ($amount < 1) return;
+    $process->stdout->on("data", function($output) use ($job, $totalBytes, &$prevCurrentBytes) {
+      if (!str_contains($output, hex2bin("1B5B33366D"))) return;
+      $result = explode("] ", $output)[2];
+      $result = explode(" (", $result)[0];
+      $result = explode("/", $result)[0];
 
-      $count += $amount;
+      $currentBytes = unitsStringToBytes($result);
+      if ($currentBytes < $prevCurrentBytes + DOWNLOAD_PROGRESS_INTERVAL_BYTES) return;
+      $prevCurrentBytes = $currentBytes;
+      
       publishJobProgress($job, "extracting", [
-        "files_extracted" => $count,
-        "files_total" => $totalFiles,
+        "bytes_extracted" => $currentBytes,
+        "bytes_total" => $totalBytes,
         "steps_done" => 1,
         "steps_total" => 2
       ]);
@@ -454,20 +475,7 @@ function cacheIpswContents($id, LoopInterface $loop) {
       $result = explode("(", $result)[0];
       $result = explode("/", $result)[0];
       
-      if (str_contains($result, "GiB")) {
-        $units = "GiB";
-        $mult = 1024 * 1024 * 1024;
-      } elseif (str_contains($result, "MiB")) {
-        $units = "MiB";
-        $mult = 1024 * 1024;
-      } elseif (str_contains($result, "KiB")) {
-        $units = "KiB";
-        $mult = 1024;
-      } else {
-        $units = "B";
-        $mult = 1;
-      }
-      $currentBytes = intval(str_replace($units, "", $result)) * $mult;
+      $currentBytes = unitsStringToBytes($result);
       if ($currentBytes == $prevCurrentBytes) return;
       $prevCurrentBytes = $currentBytes;
 
