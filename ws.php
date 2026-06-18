@@ -94,7 +94,7 @@ class IpswWs implements MessageComponentInterface {
         }
         
         if (is_dir($location)) {
-          $this->sendStatus($from, "listing", null, getDirListing($location));
+          $this->sendStatus($from, "listing", null, ["listing" => getDirListing($location)]);
         } elseif ($dmgToExtract) {
           if (!$this->setHasJob($from)) return;
 
@@ -102,7 +102,7 @@ class IpswWs implements MessageComponentInterface {
           subscribeToJobAsync($job, function($status, $data) use ($from, $location) {
             $this->setHasJob($from, $status);
             if ($status == "done") {
-              $this->sendStatus($from, "listing", null, getDirListing($location));
+              $this->sendStatus($from, "listing", null, ["listing" => getDirListing($location)]);
             } else {
               $this->sendStatus($from, $status, extra_fields: $data);
             }

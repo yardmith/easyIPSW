@@ -237,7 +237,6 @@ function getDirListing($path, $includeTags = true) {
   
   $listing = array_values(array_diff(scandir($path), [".", ".."]));
   $files = [];
-  $dirs = [];
 
   for ($i = 0; $i < count($listing); $i++) {
     $name = $listing[$i];
@@ -246,16 +245,13 @@ function getDirListing($path, $includeTags = true) {
     if (in_array(pathinfo($name, PATHINFO_EXTENSION), IGNORE_EXTENSIONS)) continue;
 
     if (is_dir("$path/$name") && pathinfo($name, PATHINFO_EXTENSION) != "dmg") {
-      array_push($dirs, $name);
+      $files[$name] = ["is_dir" => true];
     } else {
-      array_push($files, $name);
+      $files[$name] = ["size" => filesize("$path/$name")];
     }
   }
 
-  $result = ["files" => $files, "directories" => $dirs];
-
   if ($includeTags) {
-    $tags = [];
     $cachePath = CACHE_DIR . "/$ipswId";
     
     // For some reason, the first IPSWs to have BuildManifests had them named "BuildManifesto" instead.
@@ -279,7 +275,7 @@ function getDirListing($path, $includeTags = true) {
       foreach ($restoreManifest as $name => $info) {
         if (!isset($info["Info"]["Path"])) continue;
         $filename = basename($info["Info"]["Path"]);
-        if (!in_array($filename, $files) && !in_array($filename, $dirs)) continue;
+        if (!array_key_exists($filename, $files)) continue;
 
         $tag = match ($name) {
           "AppleLogo" => "applelogo",
@@ -299,7 +295,7 @@ function getDirListing($path, $includeTags = true) {
           $tag .= "|" . $info["BuildString"];
         }
 
-        if ($tag) $tags[$filename] = $tag;
+        if ($tag) $files[$filename]["tag"] = $tag;
       }
 
       $tags[$updateManifest["RestoreRamDisk"]["Info"]["Path"]] = "ramdisk_update";
@@ -307,9 +303,9 @@ function getDirListing($path, $includeTags = true) {
       // Fall back to Restore.plist, which even the oldest IPSWs have
       $restorePlist = (new CFPropertyList("$cachePath/Restore.plist"))->toArray();
 
-      $setTag = function($filename, $tag) use ($files, $dirs) {
-        if (!in_array($filename, $files) && !in_array($filename, $dirs)) return;
-        $tags[$filename] = $tag;
+      $setTag = function($filename, $tag) use ($files) {
+        if (!array_key_exists($filename, $files)) return;
+        $files[$filename]["tag"] = $tag;
       };
 
       if (isset($restorePlist["KernelCachesByPlatform"])) {
@@ -342,11 +338,9 @@ function getDirListing($path, $includeTags = true) {
         }
       }
     }
-
-    $result += ["tags" => $tags];
   }
 
-  return $result;
+  return $files;
 }
 
 function ipswIsCached($id) {
