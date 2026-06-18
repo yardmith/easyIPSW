@@ -277,7 +277,10 @@ function getDirListing($path, $includeTags = true) {
       }
 
       foreach ($restoreManifest as $name => $info) {
+        if (!isset($info["Info"]["Path"])) continue;
         $filename = basename($info["Info"]["Path"]);
+        if (!in_array($filename, $files) && !in_array($filename, $dirs)) continue;
+
         $tag = match ($name) {
           "AppleLogo" => "applelogo",
           "BatteryCharging", "BatteryCharging0", "BatteryCharging1", "BatteryFull", "BatteryLow0", "BatteryLow1", "BatteryPlugin", "RecoveryMode" => "ibootim",
@@ -304,33 +307,38 @@ function getDirListing($path, $includeTags = true) {
       // Fall back to Restore.plist, which even the oldest IPSWs have
       $restorePlist = (new CFPropertyList("$cachePath/Restore.plist"))->toArray();
 
+      $setTag = function($filename, $tag) use ($files, $dirs) {
+        if (!in_array($filename, $files) && !in_array($filename, $dirs)) return;
+        $tags[$filename] = $tag;
+      };
+
       if (isset($restorePlist["KernelCachesByPlatform"])) {
         foreach ($restorePlist["KernelCachesByPlatform"] as $list) {
           foreach ($list as $filename) {
-            $tags[$filename] = "kernelcache";
+            $setTag($filename, "kernelcache");
           }
         }
       } elseif (isset($restorePlist["RestoreKernelCaches"])) {
         foreach ($restorePlist["RestoreKernelCaches"] as $filename) {
-          $tags[$filename] = "kernelcache";
+          $setTag($filename, "kernelcache");
         }
       }
 
       if (isset($restorePlist["RamDisksByPlatform"])) {
         foreach ($restorePlist["KernelCachesByPlatform"] as $list) {
           foreach ($list as $type => $filename) {
-            $tags[$filename] = "ramdisk_" . ($type == "Update" ? "update" : "restore");
+            $setTag($filename, "ramdisk_" . ($type == "Update" ? "update" : "restore"));
           }
         }
       } elseif (isset($restorePlist["RestoreRamDisks"])) {
         foreach ($restorePlist["RestoreRamDisks"] as $type => $filename) {
-          $tags[$filename] = "ramdisk_" . ($type == "Update" ? "update" : "restore");
+          $setTag($filename, "ramdisk_" . ($type == "Update" ? "update" : "restore"));
         }
       }
 
       if (isset($restorePlist["SystemRestoreImages"])) {
         foreach ($restorePlist["SystemRestoreImages"] as $filename) {
-          $tags[$filename] = "rootfs";
+          $setTag($filename, "rootfs");
         }
       }
     }
