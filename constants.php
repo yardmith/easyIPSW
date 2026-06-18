@@ -14,3 +14,4 @@ const JOB_SUBSCRIBE_SCRIPT = __DIR__ . "/job_subscribe.php";
 const JOB_CLEAR_RESULT_AFTER_SECONDS = 5;
 const JOB_REMOVE_AFTER_INACTIVITY_SECONDS = 10;
 const BIN_DIR = __DIR__ . "/bin/";
+const ARIA2_CONNECTIONS = 16;

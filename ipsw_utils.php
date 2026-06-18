@@ -425,46 +425,53 @@ function cacheIpswContents($id, LoopInterface $loop) {
 
     mkdir($cachePath, recursive: true);
 
-    $ipswUrl = $info->url;
-    $browser = new Browser($loop);
-    $destination = new WritableResourceStream(fopen("$cachePath/ipsw.zip", "wb"), $loop);
-    
-    $browser->requestStreaming("GET", $ipswUrl)->then(function(ResponseInterface $response) use ($destination, $job, $extract) {
-      $body = $response->getBody();
-      assert($body instanceof \React\Stream\ReadableStreamInterface);
+    $process = new Process(BIN_DIR . "aria2c --show-console-readout false --summary-interval 1 -x " . ARIA2_CONNECTIONS . " -s " . ARIA2_CONNECTIONS . " -d " . escapeshellarg($cachePath) . " -o ipsw.zip " . escapeshellarg($info->url));
+    $process->start();
+    $totalBytes = get_headers($info->url, true)["Content-Length"];
+    $prevCurrentBytes = 0;
+
+    publishJobProgress($job, "downloading", [
+      "bytes_downloaded" => 0,
+      "bytes_total" => $totalBytes,
+      "steps_done" => 0,
+      "steps_total" => 2
+    ]);
+
+    $process->stdout->on("data", function($output) use ($totalBytes, $job, &$prevCurrentBytes) {
+      if (!str_contains($output, "Download Progress Summary")) return;
+
+      $result = explode("[", $output)[1];
+      $result = explode(")", $result)[0];
+      $result = explode(" ", $result)[1];
+      $result = explode("(", $result)[0];
+      $result = explode("/", $result)[0];
       
-      $currentBytes = 0;
-      $totalBytes = intval($response->getHeaderLine("Content-Length"));
-      $prevCurrentBytes = 0;
+      if (str_contains($result, "GiB")) {
+        $units = "GiB";
+        $mult = 1024 * 1024 * 1024;
+      } elseif (str_contains($result, "MiB")) {
+        $units = "MiB";
+        $mult = 1024 * 1024;
+      } elseif (str_contains($result, "KiB")) {
+        $units = "KiB";
+        $mult = 1024;
+      } else {
+        $units = "B";
+        $mult = 1;
+      }
+      $currentBytes = intval(str_replace($units, "", $result)) * $mult;
+      if ($currentBytes == $prevCurrentBytes) return;
+      $prevCurrentBytes = $currentBytes;
 
       publishJobProgress($job, "downloading", [
-        "bytes_downloaded" => 0,
+        "bytes_downloaded" => $currentBytes,
         "bytes_total" => $totalBytes,
         "steps_done" => 0,
         "steps_total" => 2
       ]);
-
-      $body->on("data", function($chunk) use (&$currentBytes, $totalBytes, &$prevCurrentBytes, $job, $destination, $body) {
-        $currentBytes += strlen($chunk);
-        $destination->write($chunk);
-
-        if ($currentBytes >= $prevCurrentBytes + DOWNLOAD_PROGRESS_INTERVAL_BYTES) {
-          publishJobProgress($job, "downloading", [
-            "bytes_downloaded" => $currentBytes,
-            "bytes_total" => $totalBytes,
-            "steps_done" => 0,
-            "steps_total" => 2
-          ]);
-          $prevCurrentBytes = $currentBytes;
-        }
-      });
-
-      $body->on("end", function() use ($destination) {
-        $destination->end();
-      });
-
-      $destination->on("close", $extract);
     });
+
+    $process->on("exit", $extract);
   });
 
   return $job;
