@@ -155,39 +155,48 @@ function extractDmg($path, LoopInterface $loop) {
     $job = addJob($ipswId, "extractDmg", $jobData);
   }
 
-  $extract = function() use ($path, $job) {
+  $extract = function($totalSteps) use ($path, $job) {
     if (is_dir($path)) {
       removeJob($job, data: [
-        "steps_done" => 2,
-        "steps_total" => 2
+        "steps_done" => $totalSteps,
+        "steps_total" => $totalSteps
       ]);
       return;
+    }
+
+    if (!is_file("$path.decrypted")) {
+      $actualPath = "$path.original";
+    } else {
+      $actualPath = "$path.decrypted";
     }
 
     $dirname = dirname($path);
     $oldList = scandir($dirname);
 
-    $process = new Process(BIN_DIR . "7zz x -o" . escapeshellarg($dirname) . " -y -bso2 -bse2 -bsp1 " . escapeshellarg("$path.decrypted") . " 2> /dev/null");
+    $process = new Process(BIN_DIR . "7zz x -o" . escapeshellarg($dirname) . " -y -bso2 -bse2 -bsp1 " . escapeshellarg($actualPath) . " 2> /dev/null");
     $process->start();
     $prevPercent = null;
 
-    $process->stdout->on("data", function($output) use (&$prevPercent, $job) {
+    $process->stdout->on("data", function($output) use (&$prevPercent, $job, $totalSteps) {
       if (!str_contains($output, "%")) return;
       $percent = intval(explode("%", str_replace([hex2bin("08"), " "], "", $output))[0]);
       if ($percent == $prevPercent) return;
 
       publishJobProgress($job, "extracting", [
         "percent_completed" => $percent,
-        "steps_done" => 1,
-        "steps_total" => 2
+        "steps_done" => $totalSteps - 1,
+        "steps_total" => $totalSteps
       ]);
 
       $prevPercent = $percent;
     });
 
     $process->on("exit", function() use ($dirname, $oldList, $path, $job) {
-      $dir = array_values(array_diff(scandir($dirname), $oldList))[0];
-      rename($dirname . "/$dir", $path);
+      $newFiles = array_values(array_diff(scandir($dirname), $oldList));
+      mkdir($path);
+      foreach ($newFiles as $newPath) {
+        rename("$dirname/$newPath", "$path/$newPath");
+      }
 
       $process = new Process("chown -R :" . escapeshellarg(SHARED_OWNERSHIP_GROUP) . " " . escapeshellarg($path) . " && chmod -R 775 " . escapeshellarg($path));
       $process->start();
@@ -202,18 +211,18 @@ function extractDmg($path, LoopInterface $loop) {
   
   $loop->futureTick(function() use ($path, $extract, $job, $loop) {
     if (is_file("$path.decrypted")) {
-      $extract();
+      $extract(1);
     } elseif (identifyImg($path) !== false) {
       if (decryptImg($path) === false) {
         removeJob($job, "Failed to decrypt DMG");
         return;
       }
-      $extract();
-    } else {
+      $extract(2);
+    } elseif (file_get_contents($path, length: 8) == "encrcdsa") {
       $decryptJob = decryptRootFsDmg($path, $loop);
       subscribeToJobAsync($decryptJob, function($status, $data) use ($job, $extract) {
         if ($status == "done") {
-          $extract();
+          $extract(2);
         } elseif ($status == "error") {
           removeJob($job, $data["message"]);
         } else {
@@ -223,6 +232,9 @@ function extractDmg($path, LoopInterface $loop) {
           ]);
         }
       }, $loop);
+    } else {
+      rename($path, "$path.original");
+      $extract(1);
     }
   });
   

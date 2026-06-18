@@ -59,7 +59,7 @@ Flight::route("/@id/raw/*", function($id) {
           } elseif ($result === false) {
             Flight::halt(500, "Failed to decrypt IMG");
           }
-        } elseif ($extension == "dmg") {
+        } elseif (file_get_contents($cachePath, length: 8) == "encrcdsa") {
           $decryptJob = decryptRootFsDmg($cachePath, Loop::get());
           subscribeToJobAsync($decryptJob, function($status, $data) use ($cachePath) {
             if ($status == "done") {
@@ -72,8 +72,6 @@ Flight::route("/@id/raw/*", function($id) {
           return;
         } elseif ($extension == "aea") {
           // TODO
-        } else {
-          Flight::halt(400, "?decrypt can only be used for DMGs, IMG2/IMG3/IMG4, or AEAs");
         }
       }
 
