@@ -10,6 +10,7 @@ const CACHE_MAX_AGE = 7200;
 const CACHE_DEBUG_MODE = false;
 const SHARED_OWNERSHIP_GROUP = "ipsw";
 const IGNORE_EXTENSIONS = ["original", "defried", "decrypted", "pngified", "xmlified"];
+const EXTRACTING_EXTENSION = "extracting";
 const JOB_SUBSCRIBE_SCRIPT = __DIR__ . "/job_subscribe.php";
 const JOB_CLEAR_RESULT_AFTER_SECONDS = 5;
 const JOB_REMOVE_AFTER_INACTIVITY_SECONDS = 10;

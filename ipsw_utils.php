@@ -219,10 +219,7 @@ function extractDmg($path, LoopInterface $loop) {
       $actualPath = "$path.decrypted";
     }
 
-    $dirname = dirname($path);
-    $oldList = scandir($dirname);
-
-    $process = new Process(BIN_DIR . "7zz x -o" . escapeshellarg($dirname) . " -y -bso2 -bse2 -bsp1 " . escapeshellarg($actualPath) . " 2> /dev/null");
+    $process = new Process(BIN_DIR . "7zz x -o" . escapeshellarg("$path.extracting") . " -y -bso2 -bse2 -bsp1 " . escapeshellarg($actualPath) . " 2> /dev/null");
     $process->start();
     $prevPercent = null;
 
@@ -240,20 +237,19 @@ function extractDmg($path, LoopInterface $loop) {
       $prevPercent = $percent;
     });
 
-    $process->on("exit", function() use ($dirname, $oldList, $path, $job) {
-      $newFiles = array_values(array_diff(scandir($dirname), $oldList));
-      mkdir($path);
-      foreach ($newFiles as $newPath) {
-        rename("$dirname/$newPath", "$path/$newPath");
-      }
-
-      $process = new Process("chown -R :" . escapeshellarg(SHARED_OWNERSHIP_GROUP) . " " . escapeshellarg($path) . " && chmod -R 775 " . escapeshellarg($path));
+    $process->on("exit", function() use ($path, $job, $totalSteps) {
+      $process = new Process("find " . escapeshellarg($path) . " -print0 | xargs -0 -P 0 -n 100 chown :" . escapeshellarg(SHARED_OWNERSHIP_GROUP));
       $process->start();
-      $process->on("exit", function() use ($job) {
+      $process->on("exit", function() use ($job, $path, $totalSteps) {
+        $process = new Process("find " . escapeshellarg($path) . " -print0 | xargs -0 -P 0 -n 100 chmod 775");
+        $process->start();
+        $process->on("exit", function() use ($job, $path, $totalSteps) {
+          rename("$path.extracting", $path);
           removeJob($job, data: [
-          "steps_done" => 2,
-          "steps_total" => 2
+            "steps_done" => $totalSteps,
+            "steps_total" => $totalSteps
           ]);
+        });
       });
     });
   };
@@ -313,7 +309,9 @@ function getDirListing($path, $includeTags = true) {
     $name = $listing[$i];
 
     //if (in_array($name, [".HFS+ Private Directory Data", ".HFS+ Private Directory Data\r", ".Trashes", "[HFS+ Private Data]"])) continue;
-    if (in_array(pathinfo($name, PATHINFO_EXTENSION), IGNORE_EXTENSIONS)) continue;
+    $extension = pathinfo($name, PATHINFO_EXTENSION);
+    if (in_array($extension, IGNORE_EXTENSIONS)) continue;
+    if ($extension == EXTRACTING_EXTENSION) $name = pathinfo($name, PATHINFO_FILENAME);
 
     if (is_dir("$path/$name") && pathinfo($name, PATHINFO_EXTENSION) != "dmg") {
       $files[$name] = ["is_dir" => true];

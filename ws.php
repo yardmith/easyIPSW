@@ -93,7 +93,7 @@ class IpswWs implements MessageComponentInterface {
           return;
         }
         
-        if (is_dir($location)) {
+        if (is_dir($location) && pathinfo($location, PATHINFO_EXTENSION) != EXTRACTING_EXTENSION) {
           $this->sendStatus($from, "listing", null, ["listing" => getDirListing($location)]);
         } elseif ($dmgToExtract && (is_file($dmgToExtract) || is_file("$dmgToExtract.decrypted"))) {
           if (!$this->setHasJob($from)) return;
