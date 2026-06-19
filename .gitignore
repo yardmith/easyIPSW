@@ -1,5 +1,4 @@
 /vendor/
-/.env
 /cache/*
 /temp/
 /aea/.venv/
