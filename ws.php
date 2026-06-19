@@ -95,7 +95,7 @@ class IpswWs implements MessageComponentInterface {
         
         if (is_dir($location)) {
           $this->sendStatus($from, "listing", null, ["listing" => getDirListing($location)]);
-        } elseif ($dmgToExtract && is_file($dmgToExtract)) {
+        } elseif ($dmgToExtract && (is_file($dmgToExtract) || is_file("$dmgToExtract.decrypted"))) {
           if (!$this->setHasJob($from)) return;
 
           $job = extractDmg($dmgToExtract, $this->loop);
