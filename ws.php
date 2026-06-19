@@ -110,7 +110,7 @@ class IpswWs implements MessageComponentInterface {
         } elseif (!is_file($location)) {
           $this->sendStatus($from, "error", "File/directory not found");
         } else {
-          $this->sendStatus($from, "error", "Can only get listing for directories or .dmg files");
+          $this->sendStatus($from, "error", "Can only get listing for directories, .dmg files, or .dmg.aea files");
         }
         break;
       

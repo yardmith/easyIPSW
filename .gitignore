@@ -2,3 +2,5 @@
 /.env
 /cache/*
 /temp/
+/aea/.venv/
+/aea/__pycache__/

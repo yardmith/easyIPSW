@@ -11,8 +11,19 @@ require_once "job_utils.php";
 
 function pathNeedsDmgExtraction($path) {
   if (!str_contains($path, ".dmg")) return false;
-  $parts = explode(".dmg", $path);
-  $dmgPath = $parts[0] . ".dmg";
+
+  $pathParts = explode("/", $path);
+  $pathPartsTemp = $pathParts;
+  for ($i = count($pathPartsTemp) - 1; $i >= 0; $i--) {
+    $part = $pathPartsTemp[$i];
+    if (!str_contains($part, ".dmg")) {
+      array_pop($pathParts);
+    } else {
+      break;
+    }
+  }
+
+  $dmgPath = implode("/", $pathParts);
   if (is_dir($dmgPath)) return false;
   return $dmgPath;
 }
@@ -140,6 +151,47 @@ function decryptRootFsDmg($path, LoopInterface $loop) {
   return $job;
 }
 
+function decryptAea($path, LoopInterface $loop) {
+  $ipswId = getIpswIdFromPath($path);
+  updateExpireTimestamp($ipswId);
+
+  $jobData = ["filename" => basename($path)];
+  $job = getOngoingJob($ipswId, "decryptAea", $jobData);
+  if ($job) {
+    return $job;
+  } else {
+    $job = addJob($ipswId, "decryptAea", $jobData);
+  }
+
+  $loop->futureTick(function() use ($path, $job) {
+    rename($path, "$path.original");
+
+    $process = new Process(AEA_UTILS_DIR . ".venv/bin/python3 " . AEA_UTILS_DIR . "extract_aea.py " . escapeshellarg("$path.original") . " " . escapeshellarg("$path.decrypted"));
+    $process->start();
+    $prevCurrentBytes = 0;
+    $totalBytes = filesize("$path.original");
+
+    $process->stdout->on("data", function($output) use ($totalBytes, &$prevCurrentBytes, $job) {
+      $lines = explode("\n", $output);
+      var_dump($lines);
+      $currentBytes = intval($lines[array_key_last($lines) - 1]);
+      if ($currentBytes < $prevCurrentBytes + DOWNLOAD_PROGRESS_INTERVAL_BYTES) return;
+      $prevCurrentBytes = $currentBytes;
+
+      publishJobProgress($job, "decrypting", [
+        "bytes_decrypted" => $currentBytes,
+        "bytes_total" => $totalBytes
+      ]);
+    });
+
+    $process->on("exit", function() use ($job) {
+      removeJob($job);
+    });
+  });
+
+  return $job;
+}
+
 function extractDmg($path, LoopInterface $loop) {
   $ipswId = getIpswIdFromPath($path);
   updateExpireTimestamp($ipswId);
@@ -198,15 +250,21 @@ function extractDmg($path, LoopInterface $loop) {
       $process = new Process("chown -R :" . escapeshellarg(SHARED_OWNERSHIP_GROUP) . " " . escapeshellarg($path) . " && chmod -R 775 " . escapeshellarg($path));
       $process->start();
       $process->on("exit", function() use ($job) {
-        removeJob($job, data: [
+          removeJob($job, data: [
           "steps_done" => 2,
           "steps_total" => 2
-        ]);
+          ]);
       });
     });
   };
   
   $loop->futureTick(function() use ($path, $extract, $job, $loop) {
+    if (is_file($path))
+      $isRootFs = file_get_contents($path, length: 8) == "encrcdsa";
+    else
+      $isRootFs = file_get_contents("$path.original", length: 8) == "encrcdsa";
+    $isAea = pathinfo($path, PATHINFO_EXTENSION) == "aea";
+
     if (is_file("$path.decrypted")) {
       $extract(1);
     } elseif (identifyImg($path) !== false) {
@@ -215,8 +273,12 @@ function extractDmg($path, LoopInterface $loop) {
         return;
       }
       $extract(2);
-    } elseif (file_get_contents($path, length: 8) == "encrcdsa") {
-      $decryptJob = decryptRootFsDmg($path, $loop);
+    } elseif ($isRootFs || $isAea) {
+      if ($isRootFs)
+        $decryptJob = decryptRootFsDmg($path, $loop);
+      else
+        $decryptJob = decryptAea($path, $loop);
+
       subscribeToJobAsync($decryptJob, function($status, $data) use ($job, $extract) {
         if ($status == "done") {
           $extract(2);
