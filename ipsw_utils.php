@@ -1,11 +1,8 @@
 <?php
 
 use CFPropertyList\CFPropertyList;
-use Psr\Http\Message\ResponseInterface;
 use React\ChildProcess\Process;
 use React\EventLoop\LoopInterface;
-use React\Http\Browser;
-use React\Stream\WritableResourceStream;
 use Symfony\Component\Filesystem\Path;
 
 require_once "db_utils.php";
