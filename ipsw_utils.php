@@ -316,7 +316,15 @@ function getDirListing($path, $includeTags = true) {
     if (is_dir("$path/$name") && pathinfo($name, PATHINFO_EXTENSION) != "dmg") {
       $files[$name] = ["is_dir" => true];
     } else {
-      $files[$name] = ["size" => is_file("$path/$name.original") ? filesize("$path/$name.original") : filesize("$path/$name")];
+      $filePath = "$path/$name";
+      $actualPath = $filePath;
+      if (is_file("$path/$name.original")) $actualPath .= ".original";
+
+      $files[$name] = [
+        "size" => filesize($actualPath)
+      ] + ((identifyImg($actualPath) || file_get_contents($actualPath, length: 8) == "encrcdsa") && !getKeyFromPath($filePath) ? [
+        "no_key" => true
+      ] : []);
     }
   }
 
