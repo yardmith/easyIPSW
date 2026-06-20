@@ -10,6 +10,7 @@ require_once "constants.php";
 require_once "job_utils.php";
 
 function pathNeedsDmgExtraction($path) {
+  $path = rtrim($path, "/");
   if (!str_contains($path, ".dmg")) return false;
 
   $pathParts = explode("/", $path);
@@ -25,6 +26,7 @@ function pathNeedsDmgExtraction($path) {
 
   $dmgPath = implode("/", $pathParts);
   if (is_dir($dmgPath)) return false;
+  if ($dmgPath == $path) return false;
   return $dmgPath;
 }
 
@@ -173,7 +175,6 @@ function decryptAea($path, LoopInterface $loop) {
 
     $process->stdout->on("data", function($output) use ($totalBytes, &$prevCurrentBytes, $job) {
       $lines = explode("\n", $output);
-      var_dump($lines);
       $currentBytes = intval($lines[array_key_last($lines) - 1]);
       if ($currentBytes < $prevCurrentBytes + DOWNLOAD_PROGRESS_INTERVAL_BYTES) return;
       $prevCurrentBytes = $currentBytes;

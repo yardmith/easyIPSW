@@ -52,6 +52,9 @@ Flight::route("/@id/raw/*", function($id) {
       $extension = pathinfo($cachePath, PATHINFO_EXTENSION);
 
       if (!is_file("$cachePath.decrypted") && !is_dir($cachePath)) {
+        $isRootFs = file_get_contents($cachePath, length: 8) == "encrcdsa";
+        $isAea = $extension == "aea";
+
         if (identifyImg($cachePath)) {
           $result = decryptImg($cachePath);
           if ($result === null) {
@@ -59,8 +62,12 @@ Flight::route("/@id/raw/*", function($id) {
           } elseif ($result === false) {
             Flight::halt(500, "Failed to decrypt IMG");
           }
-        } elseif (file_get_contents($cachePath, length: 8) == "encrcdsa") {
-          $decryptJob = decryptRootFsDmg($cachePath, Loop::get());
+        } elseif ($isRootFs || $isAea) {
+          if ($isRootFs)
+            $decryptJob = decryptRootFsDmg($cachePath, Loop::get());
+          else
+            $decryptJob = decryptAea($cachePath, Loop::get());  
+
           subscribeToJobAsync($decryptJob, function($status, $data) use ($cachePath) {
             if ($status == "done") {
               /** @disregard */
@@ -70,8 +77,6 @@ Flight::route("/@id/raw/*", function($id) {
             }
           });
           return;
-        } elseif ($extension == "aea") {
-          // TODO
         }
       }
 
