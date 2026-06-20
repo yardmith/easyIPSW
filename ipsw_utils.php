@@ -316,7 +316,7 @@ function getDirListing($path, $includeTags = true) {
     if (is_dir("$path/$name") && pathinfo($name, PATHINFO_EXTENSION) != "dmg") {
       $files[$name] = ["is_dir" => true];
     } else {
-      $files[$name] = ["size" => filesize("$path/$name")];
+      $files[$name] = ["size" => is_file("$path/$name.original") ? filesize("$path/$name.original") : filesize("$path/$name")];
     }
   }
 
