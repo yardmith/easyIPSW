@@ -1,5 +1,5 @@
 /vendor/
-/cache/*
+/cache/
 /temp/
 /aea/.venv/
 /aea/__pycache__/
