@@ -59,6 +59,7 @@ class IpswWs implements MessageComponentInterface {
 
   public function onMessage(ConnectionInterface $from, $msg) {
     $msg = json_decode($msg, true);
+    if (!isset($msg["command"])) return;
     $command = $msg["command"];
     $ipswId = $this->clients[$from];
     $cachePath = CACHE_DIR . "/$ipswId";

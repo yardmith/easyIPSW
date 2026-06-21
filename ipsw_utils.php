@@ -529,6 +529,7 @@ function cacheIpswContents($id, LoopInterface $loop) {
     $process = new Process(BIN_DIR . "aria2c --show-console-readout false --summary-interval 1 -x " . ARIA2_CONNECTIONS . " -s " . ARIA2_CONNECTIONS . " -d " . escapeshellarg($cachePath) . " -o ipsw.zip " . escapeshellarg($info->url));
     $process->start();
     $totalBytes = get_headers($info->url, true)["Content-Length"];
+    if (is_array($totalBytes)) $totalBytes = end($totalBytes);
     $prevCurrentBytes = 0;
 
     publishJobProgress($job, "downloading", [
