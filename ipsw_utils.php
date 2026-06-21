@@ -512,7 +512,7 @@ function cacheIpswContents($id, LoopInterface $loop) {
       return;
     }
 
-    if (is_dir($cachePath)) {
+    if (file_exists($cachePath)) {
       if (is_file("$cachePath/ipsw.zip")) {
         $extract();
       } else {
