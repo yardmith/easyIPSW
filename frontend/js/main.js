@@ -235,4 +235,10 @@ window.onload = () => {
   ws.addEventListener("open", (event) => {
     if (initializing) sendCommand("cache");
   });
+  ws.addEventListener("error", (event) => {
+    listingPage.classList.add("invisible");
+    initPage.classList.remove("invisible");
+    initBarFill.style.width = "0%";
+    initStatus.innerText = `Error: Failed to connect to server`;
+  })
 };
