@@ -87,7 +87,7 @@ class IpswWs implements MessageComponentInterface {
           $location = "/$location";
         }
         $location = "$cachePath$location";
-        $dmgToExtract = pathNeedsDmgExtraction($location);
+        $dmgToExtract = pathNeedsDmgExtraction($location, true);
 
         if (!getIpswIdFromPath($location)) {
           $this->sendStatus($from, "error", "File/directory not found");

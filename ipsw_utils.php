@@ -9,7 +9,7 @@ require_once "db_utils.php";
 require_once "constants.php";
 require_once "job_utils.php";
 
-function pathNeedsDmgExtraction($path) {
+function pathNeedsDmgExtraction($path, $allowDmgAsLastPathLevel = false) {
   $path = rtrim($path, "/");
   if (!str_contains($path, ".dmg")) return false;
 
@@ -26,7 +26,7 @@ function pathNeedsDmgExtraction($path) {
 
   $dmgPath = implode("/", $pathParts);
   if (is_dir($dmgPath)) return false;
-  if ($dmgPath == $path) return false;
+  if ($dmgPath == $path && !$allowDmgAsLastPathLevel) return false;
   return $dmgPath;
 }
 
