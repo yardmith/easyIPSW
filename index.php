@@ -9,6 +9,8 @@ require_once "db_utils.php";
 require_once "ipsw_utils.php";
 
 Flight::set("flight.debug", DEBUG);
+Flight::set("flight.views.path", FRONTEND_DIR);
+Flight::set("flight.views.extension", "html");
 
 Flight::route("/@id/download", function($id) {
   $info = getIpswInfo($id);
@@ -177,5 +179,24 @@ Flight::route("/@id/raw/*", function($id) {
     }
   });
 })->stream();
+
+Flight::route("/@id/browse/*", function($id) {
+  $ipswInfo = getIpswInfo($id);
+
+  if ($ipswInfo) {
+    $versionString = $ipswInfo["version_string"];
+    $deviceName = $ipswInfo["device"]["name"];
+  } else {
+    $versionString = "Unknown";
+    $deviceName = "Unknown";
+  }
+
+  Flight::render("browse.html", [
+    "url" => Flight::request()->getFullUrl(),
+    "ipswId" => $id,
+    "versionString" => $versionString,
+    "deviceName" => $deviceName
+  ]);
+});
 
 Flight::start();

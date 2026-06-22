@@ -17,3 +17,4 @@ const JOB_REMOVE_AFTER_INACTIVITY_SECONDS = 10;
 const BIN_DIR = __DIR__ . "/bin/";
 const ARIA2_CONNECTIONS = 16;
 const AEA_UTILS_DIR = __DIR__ . "/aea/";
+const FRONTEND_DIR = __DIR__ . "/frontend";
