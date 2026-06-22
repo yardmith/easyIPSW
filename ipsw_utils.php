@@ -376,7 +376,7 @@ function getDirListing($path, $includeTags = true) {
         if ($tag) $files[$filename]["tag"] = $tag;
       }
 
-      $tags[$updateManifest["RestoreRamDisk"]["Info"]["Path"]] = "ramdisk_update";
+      $files[$updateManifest["RestoreRamDisk"]["Info"]["Path"]]["tag"] = "ramdisk_update";
     } elseif (is_file("$cachePath/Restore.plist")) {
       // Fall back to Restore.plist, which even the oldest IPSWs have
       $restorePlist = (new CFPropertyList("$cachePath/Restore.plist"))->toArray();
