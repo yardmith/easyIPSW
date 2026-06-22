@@ -314,7 +314,9 @@ function getDirListing($path, $includeTags = true) {
     if (in_array($extension, IGNORE_EXTENSIONS)) continue;
     if ($extension == EXTRACTING_EXTENSION) $name = pathinfo($name, PATHINFO_FILENAME);
 
-    if (is_dir("$path/$name") && pathinfo($name, PATHINFO_EXTENSION) != "dmg") {
+    $isDmg = in_array(pathinfo($name, PATHINFO_EXTENSION), ["dmg", "aea"]);
+
+    if (is_dir("$path/$name") && !$isDmg) {
       $files[$name] = ["is_dir" => true];
     } else {
       $filePath = "$path/$name";
@@ -325,6 +327,8 @@ function getDirListing($path, $includeTags = true) {
         "size" => filesize($actualPath)
       ] + ((identifyImg($actualPath) || file_get_contents($actualPath, length: 8) == "encrcdsa") && !getKeyFromPath($filePath) ? [
         "no_key" => true
+      ] : []) + (is_dir("$path/$name") && $isDmg ? [
+        "extracted" => true
       ] : []);
     }
   }
