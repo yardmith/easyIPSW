@@ -137,7 +137,9 @@ Flight::route("/@id/raw/*", function($id) {
       if (!is_file("$cachePath.jsonified")) {
         $plist = new CFPropertyList($cachePath);
         $array = $plist->toArray();
-        file_put_contents("$cachePath.jsonified", json_encode($array, JSON_PRETTY_PRINT));
+        $json = json_encode($array, JSON_PRETTY_PRINT);
+        if (!$json) Flight::halt(500, "Error converting plist to JSON, there's likely a \"data\" tag somewhere in the file");
+        file_put_contents("$cachePath.jsonified", $json);
       }
       /** @disregard */
       Flight::download("$cachePath.jsonified", basename($cachePath) . ".json");
