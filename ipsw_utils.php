@@ -310,6 +310,9 @@ function getDirListing($path, $includeTags = true) {
     $name = $listing[$i];
 
     //if (in_array($name, [".HFS+ Private Directory Data", ".HFS+ Private Directory Data\r", ".Trashes", "[HFS+ Private Data]"])) continue;
+    $originalName = str_replace(".original", "", $name);
+    if (pathinfo($name, PATHINFO_EXTENSION) == "original" && !file_exists("$path/$originalName")) $name = $originalName;
+    
     $extension = pathinfo($name, PATHINFO_EXTENSION);
     if (in_array($extension, IGNORE_EXTENSIONS)) continue;
     if ($extension == EXTRACTING_EXTENSION) $name = pathinfo($name, PATHINFO_FILENAME);
