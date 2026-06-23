@@ -115,6 +115,10 @@ class IpswWs implements MessageComponentInterface {
         }
         break;
       
+      case "ping":
+        $this->sendStatus($from, "pong");
+        break;
+
       default:
         $this->sendStatus($from, "error", "Invalid command ($command)");
     }
