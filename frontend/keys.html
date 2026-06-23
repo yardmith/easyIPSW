@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Decryption keys - <?= $versionString ?> (<?= $deviceName ?>)</title>
+
+  <meta name="description" content="Decryption keys for <?= $versionString ?> for the <?= $deviceName ?>">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="<?= $url ?>">
+  <meta property="og:title" content="<?= $versionString ?> (<?= $deviceName ?>) - Decryption keys">
+  <meta property="og:description" content="Decryption keys for <?= $versionString ?> for the <?= $deviceName ?>">
+
+  <script type="module" src="/js/keys.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="icon" href="/assets/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
+</head>
+<body class="flex flex-col items-center bg-slate-50 dark:bg-zinc-900 scheme-light-dark pt-10 pb-10 gap-8 font-[Inter] text-slate-900 dark:text-zinc-50 overflow-y-scroll">
+  <div class="flex flex-col items-center gap-2">
+    <div class="text-xl"><?= $versionString ?> (<?= $deviceName ?>)</div>
+    <div class="text-slate-600 dark:text-zinc-400">Decryption keys</div>
+  </div>
+
+  <div id="items" class="flex flex-col items-center gap-8 w-4/10">
+    <a href="keys?json" class="ms-auto bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border-1 border-solid border-slate-300 dark:border-zinc-600 rounded-lg p-2 shadow-xl/2 dark:shadow-none transition">JSON</a>
+
+    <div id="no-keys" class="hidden">No keys found</div>
+
+    <div id="key-template" class="flex flex-col items-center bg-slate-100 dark:bg-zinc-800 border-2 border-solid border-slate-200 dark:border-zinc-700 w-full min-w-100 h-max rounded-3xl shadow-xl/2 dark:shadow-none p-4 gap-6 hidden">
+      <div class="flex flex-row justify-start items-baseline w-full">
+        <div data-field="tag">Tag</div>
+        <div data-field="filename" class="font-[Source_Code_Pro] text-slate-600 dark:text-zinc-300 ms-auto text-sm bg-slate-200 dark:bg-zinc-700 rounded-sm">Filename</div>
+      </div>
+      <div class="flex flex-row items-baseline gap-2 w-full">
+        <div class="text-lg">Key:</div>
+        <div data-field="key" class="font-[Source_Code_Pro] text-slate-600 dark:text-zinc-300 ms-auto bg-slate-200 dark:bg-zinc-700 rounded-sm wrap-break-word max-w-8/10">key</div>
+      </div>
+      <div data-field="iv-wrapper" class="flex flex-row items-baseline gap-2 w-full">
+        <div class="text-lg">IV:</div>
+        <div data-field="iv" class="font-[Source_Code_Pro] text-slate-600 dark:text-zinc-300 ms-auto bg-slate-200 dark:bg-zinc-700 rounded-sm wrap-break-word max-w-8/10">iv</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

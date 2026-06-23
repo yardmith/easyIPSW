@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en" class="overscroll-none">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><?= $message ?> - easyIPSW</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="icon" href="/assets/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+</head>
+<body class="w-screen h-svh flex flex-row justify-center items-center gap-4 bg-slate-50 dark:bg-zinc-900 overscroll-none scheme-light-dark">
+  <img src="/assets/logo.png" alt="easyIPSW" class="h-20" title="easyIPSW">
+  <div class="flex flex-col font-[Inter] w-30">
+    <div class="text-5xl text-slate-900 dark:text-zinc-50 font-medium">404</div>
+    <div class="text-slate-600 dark:text-zinc-400"><?= $message ?>.</div>
+  </div>
+</body>
+</html>
