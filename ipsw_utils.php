@@ -297,6 +297,97 @@ function extractDmg($path, LoopInterface $loop) {
   return $job;
 }
 
+function getFileTags($ipswId) {
+  $tags = [];
+  $cachePath = CACHE_DIR . "/$ipswId";
+  if (!is_dir($cachePath)) return false;
+  
+  // For some reason, the first IPSWs to have BuildManifests had them named "BuildManifesto" instead.
+  $buildManifest = null;
+  if (is_file("$cachePath/BuildManifest.plist")) {
+    $buildManifest = (new CFPropertyList("$cachePath/BuildManifest.plist"))->toArray();
+  } elseif (is_file("$cachePath/BuildManifesto.plist")) {
+    $buildManifest = (new CFPropertyList("$cachePath/BuildManifesto.plist"))->toArray();
+  }
+
+  if ($buildManifest) {
+    $restoreManifest = null;
+    $updateManifest = null;
+    foreach ($buildManifest["BuildIdentities"] as $id) {
+      if ($id["Info"]["RestoreBehavior"] == "Erase")
+        $restoreManifest = $id["Manifest"];
+      elseif ($id["Info"]["RestoreBehavior"] == "Update")
+        $updateManifest = $id["Manifest"];
+    }
+
+    foreach ($restoreManifest as $name => $info) {
+      if (!isset($info["Info"]["Path"])) continue;
+      $filename = basename($info["Info"]["Path"]);
+
+      $tag = match ($name) {
+        "AppleLogo" => "applelogo",
+        "BatteryCharging", "BatteryCharging0", "BatteryCharging1", "BatteryFull", "BatteryLow0", "BatteryLow1", "BatteryPlugin", "RecoveryMode" => "ibootim",
+        "DeviceTree" => "devicetree",
+        "KernelCache" => "kernelcache",
+        "LLB" => "llb",
+        "OS" => "rootfs",
+        "RestoreRamDisk" => "ramdisk_restore",
+        "iBEC" => "ibec",
+        "iBSS" => "ibss",
+        "iBoot" => "iboot",
+        default => null
+      };
+
+      if (in_array($tag, ["llb", "ibec", "ibss"])) {
+        $tag .= "|" . $info["BuildString"];
+      }
+
+      if ($tag) $tags[$filename] = $tag;
+    }
+
+    $tags[$updateManifest["RestoreRamDisk"]["Info"]["Path"]] = "ramdisk_update";
+  } elseif (is_file("$cachePath/Restore.plist")) {
+    // Fall back to Restore.plist, which even the oldest IPSWs have
+    $restorePlist = (new CFPropertyList("$cachePath/Restore.plist"))->toArray();
+
+    $setTag = function($filename, $tag) use ($tags) {
+      $tags[$filename] = $tag;
+    };
+
+    if (isset($restorePlist["KernelCachesByPlatform"])) {
+      foreach ($restorePlist["KernelCachesByPlatform"] as $list) {
+        foreach ($list as $filename) {
+          $setTag($filename, "kernelcache");
+        }
+      }
+    } elseif (isset($restorePlist["RestoreKernelCaches"])) {
+      foreach ($restorePlist["RestoreKernelCaches"] as $filename) {
+        $setTag($filename, "kernelcache");
+      }
+    }
+
+    if (isset($restorePlist["RamDisksByPlatform"])) {
+      foreach ($restorePlist["KernelCachesByPlatform"] as $list) {
+        foreach ($list as $type => $filename) {
+          $setTag($filename, "ramdisk_" . ($type == "Update" ? "update" : "restore"));
+        }
+      }
+    } elseif (isset($restorePlist["RestoreRamDisks"])) {
+      foreach ($restorePlist["RestoreRamDisks"] as $type => $filename) {
+        $setTag($filename, "ramdisk_" . ($type == "Update" ? "update" : "restore"));
+      }
+    }
+
+    if (isset($restorePlist["SystemRestoreImages"])) {
+      foreach ($restorePlist["SystemRestoreImages"] as $filename) {
+        $setTag($filename, "rootfs");
+      }
+    }
+  }
+
+  return $tags;
+}
+
 function getDirListing($path, $includeTags = true) {
   if (!$ipswId = getIpswIdFromPath($path)) {
     return false;
@@ -337,92 +428,9 @@ function getDirListing($path, $includeTags = true) {
   }
 
   if ($includeTags) {
-    $cachePath = CACHE_DIR . "/$ipswId";
-    
-    // For some reason, the first IPSWs to have BuildManifests had them named "BuildManifesto" instead.
-    $buildManifest = null;
-    if (is_file("$cachePath/BuildManifest.plist")) {
-      $buildManifest = (new CFPropertyList("$cachePath/BuildManifest.plist"))->toArray();
-    } elseif (is_file("$cachePath/BuildManifesto.plist")) {
-      $buildManifest = (new CFPropertyList("$cachePath/BuildManifesto.plist"))->toArray();
-    }
-
-    if ($buildManifest) {
-      $restoreManifest = null;
-      $updateManifest = null;
-      foreach ($buildManifest["BuildIdentities"] as $id) {
-        if ($id["Info"]["RestoreBehavior"] == "Erase")
-          $restoreManifest = $id["Manifest"];
-        elseif ($id["Info"]["RestoreBehavior"] == "Update")
-          $updateManifest = $id["Manifest"];
-      }
-
-      foreach ($restoreManifest as $name => $info) {
-        if (!isset($info["Info"]["Path"])) continue;
-        $filename = basename($info["Info"]["Path"]);
-        if (!array_key_exists($filename, $files)) continue;
-
-        $tag = match ($name) {
-          "AppleLogo" => "applelogo",
-          "BatteryCharging", "BatteryCharging0", "BatteryCharging1", "BatteryFull", "BatteryLow0", "BatteryLow1", "BatteryPlugin", "RecoveryMode" => "ibootim",
-          "DeviceTree" => "devicetree",
-          "KernelCache" => "kernelcache",
-          "LLB" => "llb",
-          "OS" => "rootfs",
-          "RestoreRamDisk" => "ramdisk_restore",
-          "iBEC" => "ibec",
-          "iBSS" => "ibss",
-          "iBoot" => "iboot",
-          default => null
-        };
-
-        if (in_array($tag, ["llb", "ibec", "ibss"])) {
-          $tag .= "|" . $info["BuildString"];
-        }
-
-        if ($tag) $files[$filename]["tag"] = $tag;
-      }
-
-      if (isset($files[$updateManifest["RestoreRamDisk"]["Info"]["Path"]]))
-        $files[$updateManifest["RestoreRamDisk"]["Info"]["Path"]]["tag"] = "ramdisk_update";
-    } elseif (is_file("$cachePath/Restore.plist")) {
-      // Fall back to Restore.plist, which even the oldest IPSWs have
-      $restorePlist = (new CFPropertyList("$cachePath/Restore.plist"))->toArray();
-
-      $setTag = function($filename, $tag) use ($files) {
-        if (!array_key_exists($filename, $files)) return;
-        $files[$filename]["tag"] = $tag;
-      };
-
-      if (isset($restorePlist["KernelCachesByPlatform"])) {
-        foreach ($restorePlist["KernelCachesByPlatform"] as $list) {
-          foreach ($list as $filename) {
-            $setTag($filename, "kernelcache");
-          }
-        }
-      } elseif (isset($restorePlist["RestoreKernelCaches"])) {
-        foreach ($restorePlist["RestoreKernelCaches"] as $filename) {
-          $setTag($filename, "kernelcache");
-        }
-      }
-
-      if (isset($restorePlist["RamDisksByPlatform"])) {
-        foreach ($restorePlist["KernelCachesByPlatform"] as $list) {
-          foreach ($list as $type => $filename) {
-            $setTag($filename, "ramdisk_" . ($type == "Update" ? "update" : "restore"));
-          }
-        }
-      } elseif (isset($restorePlist["RestoreRamDisks"])) {
-        foreach ($restorePlist["RestoreRamDisks"] as $type => $filename) {
-          $setTag($filename, "ramdisk_" . ($type == "Update" ? "update" : "restore"));
-        }
-      }
-
-      if (isset($restorePlist["SystemRestoreImages"])) {
-        foreach ($restorePlist["SystemRestoreImages"] as $filename) {
-          $setTag($filename, "rootfs");
-        }
-      }
+    $tags = getFileTags($ipswId);
+    foreach ($tags as $filename => $tag) {
+      if (array_key_exists($filename, $files)) $files[$filename]["tag"] = $tag;
     }
   }
 
