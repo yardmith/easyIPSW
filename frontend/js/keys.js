@@ -19,7 +19,7 @@ window.onload = async () => {
     let clone = keyTemplate.cloneNode(true);
     clone.querySelector('[data-field="filename"]').innerText = info.filename;
 
-    let tag = info.tag.split("|")[0];
+    let tag = "tag" in info ? info.tag.split("|")[0] : null;
     if (tag && tag in C.TAG_FRIENDLY_NAMES)
       clone.querySelector('[data-field="tag"]').innerText = C.TAG_FRIENDLY_NAMES[tag];
     else

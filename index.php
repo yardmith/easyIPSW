@@ -217,7 +217,7 @@ Flight::route("/@id/keys", function($id) {
   $tags = getFileTags($id);
   foreach (getIpswKeys($id) as $filename =>  $key) {
     $info = ["filename" => $filename];
-    if (array_key_exists($filename, $tags)) $info["tag"] = $tags[$filename];
+    if ($tags && array_key_exists($filename, $tags)) $info["tag"] = $tags[$filename];
     $info["key"] = $key["key"];
     if (array_key_exists("iv", $key)) $info["iv"] = $key["iv"];
     array_push($keys, $info);
