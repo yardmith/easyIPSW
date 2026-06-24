@@ -16,7 +16,7 @@
   <link rel="icon" href="/assets/icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=block" rel="stylesheet">
 
   <link rel="preload" href="/assets/loader.svg" as="image" type="image/svg+xml">
   <link rel="preload" href="/assets/chevron-right.svg" as="image" type="image/svg+xml">
@@ -30,32 +30,32 @@
   <link rel="preload" href="/assets/applelogo.svg" as="image" type="image/svg+xml">
   <link rel="preload" href="/assets/iboot.svg" as="image" type="image/svg+xml">
 </head>
-<body class="bg-slate-50 dark:bg-zinc-900 overscroll-none scheme-light-dark">
+<body class="font-[Inter] bg-slate-50 dark:bg-zinc-900 text-slate-900 dark:text-zinc-50 overscroll-none scheme-light-dark">
   <div id="init-page" class="flex flex-col gap-4 h-svh items-center justify-center absolute left-0 right-0 invisible">
     <img src="/assets/logo.png" alt="easyIPSW" class="h-20" title="easyIPSW">
     <div id="init-progress-bar" class="w-1/5 h-2 bg-slate-200 rounded-full min-w-80 dark:bg-zinc-700 overflow-hidden">
       <div id="init-progress-bar-fill" class="h-full bg-blue-400"></div>
     </div>
-    <div id="init-status-text" class="font-[Inter] text-sm text-slate-900 dark:text-zinc-50">Status</div>
+    <div id="init-status-text" class="text-sm">Status</div>
   </div>
 
   <div id="listing-page" class="flex flex-col sm:flex-row h-svh items-center justify-start absolute left-0 right-0 pt-25 sm:pt-14 invisible">
     <div class="bg-slate-200 dark:bg-zinc-700 fixed w-screen h-25 sm:h-14 top-0 border-b-2 border-solid border-slate-300 dark:border-zinc-600 flex flex-col sm:flex-row items-center justify-center sm:justify-start pt-2 pb-2 sm:pt-0 sm:pb-0 sm:ps-4 sm:pe-4 gap-1 sm:gap-4">
       <img src="/assets/logo.png" alt="easyIPSW" class="h-20 sm:h-full hidden sm:block" title="easyIPSW">
-      <div class="font-[Inter] text-slate-900 dark:text-zinc-50"><?= $versionString ?> (<?= $deviceName ?>)</div>
-      <div class="font-[Inter] text-slate-600 dark:text-zinc-400 text-xs">(<?= $ipswId ?>)</div>
+      <div><?= $versionString ?> (<?= $deviceName ?>)</div>
+      <div class="text-slate-600 dark:text-zinc-400 text-xs">(<?= $ipswId ?>)</div>
       <div class="sm:ms-auto flex flex-row items-center justify-center sm:justify-end gap-4 mt-2 sm:m-0">
-        <a href="download" class="font-[Inter] text-slate-900 dark:text-zinc-50 hover:underline">Download IPSW</a>
-        <a href="keys" class="font-[Inter] text-slate-900 dark:text-zinc-50 hover:underline">View keys</a>
+        <a href="download" class="hover:underline">Download IPSW</a>
+        <a href="keys" class="hover:underline">View keys</a>
       </div>
     </div>
 
     <div id="listing-files-view" class="flex flex-col p-4 h-1/3 w-full sm:h-full sm:w-1/4 sm:max-w-100 sm:min-w-60 bg-slate-100 dark:bg-zinc-800 border-b-2 sm:border-r-2 sm:border-b-0 border-solid border-slate-200 dark:border-zinc-700 overflow-y-auto">
-      <div id="listing-path" class="font-[Inter] text-slate-600 text-sm ml-2 dark:text-zinc-400 mb-2 whitespace-nowrap invisible">/path</div>
-      <div id="listing-file-template" class="group/file font-[Inter] p-3 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-xl transition cursor-pointer flex flex-row gap-2 items-center hidden">
+      <div id="listing-path" class="text-slate-600 text-sm ml-2 dark:text-zinc-400 mb-2 whitespace-nowrap invisible">/path</div>
+      <div id="listing-file-template" class="group/file p-3 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-xl transition cursor-pointer flex flex-row gap-2 items-center hidden">
         <img data-field="icon" src="/assets/file.svg" alt="File" class="min-w-5 h-5 dark:invert object-contain">
         <div class="flex flex-row items-baseline grow min-w-0">
-          <div data-field="filename" class="text-slate-900 dark:text-zinc-50 overflow-hidden min-w-0 grow whitespace-nowrap text-ellipsis text-sm">Filename</div>
+          <div data-field="filename" class="overflow-hidden min-w-0 grow whitespace-nowrap text-ellipsis text-sm">Filename</div>
           <div data-field="tag" class="text-xs text-slate-600 dark:text-zinc-400 ms-auto group-hover/file:hidden whitespace-nowrap hidden">(Tag)</div>
         </div>
         <img data-field="no-key" src="/assets/no-key.svg" alt="No decryption key available" title="No decryption key available" class="opacity-50 dark:invert min-w-3 h-3 hidden">
@@ -64,20 +64,20 @@
     </div>
 
     <div id="listing-info-view" class="flex flex-col items-center w-full h-full">
-      <div id="info-view-file" class="flex flex-row justify-center items-center gap-2 font-[Inter] text-slate-600 w-full h-12 text-center -mb-12 hidden">
+      <div id="info-view-file" class="flex flex-row justify-center items-center gap-2 text-slate-600 w-full h-12 text-center -mb-12 hidden">
         <img id="info-view-icon" src="/assets/file.svg" alt="File" class="min-w-5 h-5 dark:invert object-contain">
         <div id="info-view-filename">File</div>
       </div>
 
       <div id="info-start" class="grow w-full sm:w-auto sm:h-full flex flex-col justify-center items-center">
-        <div class="font-[Inter] text-slate-600 dark:text-zinc-400">Select a file to view it</div>
+        <div class="text-slate-600 dark:text-zinc-400">Select a file to view it</div>
       </div>
 
       <div id="info-extracting" class="grow w-full flex flex-col justify-center items-center gap-4 hidden">
         <div id="extracting-progress-bar" class="w-1/4 h-2 bg-slate-200 rounded-full min-w-80 dark:bg-zinc-700 overflow-hidden">
           <div id="extracting-progress-bar-fill" class="h-full bg-blue-400" style="width: 0%;"></div>
         </div>
-        <div id="extracting-status-text" class="font-[Inter] text-sm text-slate-900 dark:text-zinc-50">Status</div>
+        <div id="extracting-status-text" class="text-sm">Status</div>
       </div>
     </div>
   </div>
