@@ -1,5 +1,3 @@
-import * as C from "./constants.js";
-
 function bytesToUnitsString(bytes) {
   if (!bytes && bytes !== 0) return "Unknown";
 
@@ -70,7 +68,7 @@ window.onload = () => {
     pushStateOnNextListing = pushState;
     sendCommand("listing", {"location": path});
   }
-
+    
   function hideInfoViews() {
     for (let i = 0; i < infoView.children.length; i++) {
       let child = infoView.children[i];
@@ -188,7 +186,7 @@ window.onload = () => {
         parentEntry.querySelector('[data-field="filename"]').innerText = "Parent directory";
         parentEntry.querySelector('[data-field="tag"]').classList.add("hidden");
         parentEntry.querySelector('[data-field="dir-arrow"]').classList.remove("hidden");
-        parentEntry.querySelector('[data-field="icon"]').src = `${C.ASSETS_DIR}/parent-dir.svg`;
+        parentEntry.querySelector('[data-field="icon"]').src = `${ASSETS_DIR}/parent-dir.svg`;
         parentEntry.querySelector('[data-field="icon"]').alt = "Up";
 
         parentEntry.onclick = () => {
@@ -216,25 +214,25 @@ window.onload = () => {
         let tag = null;
         if ("tag" in info) {
           tag = info.tag.split("|")[0];
-          if (tag in C.TAG_FRIENDLY_NAMES) {
-            clone.querySelector('[data-field="tag"]').innerText = `(${C.TAG_FRIENDLY_NAMES[tag]})`;
+          if (tag in TAG_FRIENDLY_NAMES) {
+            clone.querySelector('[data-field="tag"]').innerText = `(${TAG_FRIENDLY_NAMES[tag]})`;
             clone.querySelector('[data-field="tag"]').classList.remove("hidden");
           }
         }
 
         let extension = filename.split(".").pop();
-        if (info.is_dir || C.DIR_LIKE_FILES.includes(extension)) 
+        if (info.is_dir || DIR_LIKE_FILES.includes(extension)) 
           clone.querySelector('[data-field="dir-arrow"]').classList.remove("hidden");
 
         if (info.is_dir) {
-          clone.querySelector('[data-field="icon"]').src = `${C.ASSETS_DIR}/dir.svg`;
+          clone.querySelector('[data-field="icon"]').src = `${ASSETS_DIR}/dir.svg`;
           clone.querySelector('[data-field="icon"]').alt = "Directory";
-        } else if (tag in C.TAG_ICONS) {
-          clone.querySelector('[data-field="icon"]').src = `${C.ASSETS_DIR}/${C.TAG_ICONS[tag]}.svg`;
-          clone.querySelector('[data-field="icon"]').alt = C.TAG_ICONS[tag];
-        } else if (extension in C.EXTENSION_ICONS) {
-          clone.querySelector('[data-field="icon"]').src = `${C.ASSETS_DIR}/${C.EXTENSION_ICONS[extension]}.svg`;
-          clone.querySelector('[data-field="icon"]').alt = C.EXTENSION_ICONS[extension];
+        } else if (tag in TAG_ICONS) {
+          clone.querySelector('[data-field="icon"]').src = `${ASSETS_DIR}/${TAG_ICONS[tag]}.svg`;
+          clone.querySelector('[data-field="icon"]').alt = TAG_ICONS[tag];
+        } else if (extension in EXTENSION_ICONS) {
+          clone.querySelector('[data-field="icon"]').src = `${ASSETS_DIR}/${EXTENSION_ICONS[extension]}.svg`;
+          clone.querySelector('[data-field="icon"]').alt = EXTENSION_ICONS[extension];
         }
 
         let targetPath = removeTrailingSlash(browsePath) + "/" + filename;
@@ -254,12 +252,12 @@ window.onload = () => {
             infoViewStart.classList.add("hidden");
           }
 
-          if (C.DIR_LIKE_FILES.includes(extension) && !extractingDmg) {
+          if (DIR_LIKE_FILES.includes(extension) && !extractingDmg) {
             extractingDmg = !info.extracted ? filename : false;
             navigateTo(targetPath);
             if (extractingDmg) {
               hideInfoViews();
-              clone.querySelector('[data-field="dir-arrow"]').src = `${C.ASSETS_DIR}/loader.svg`;
+              clone.querySelector('[data-field="dir-arrow"]').src = `${ASSETS_DIR}/loader.svg`;
               clone.querySelector('[data-field="dir-arrow"]').classList.add("animate-spin");
               extractingBarFill.style.width = "0%";
               extractingStatus.innerText = "Waiting...";
@@ -293,7 +291,7 @@ window.onload = () => {
     if (initializing) sendCommand("cache");
     setTimeout(() => {
       sendCommand("ping");
-    }, C.HEARTBEAT_INTERVAL);
+    }, HEARTBEAT_INTERVAL);
   });
   ws.addEventListener("error", (event) => {
     listingPage.classList.add("invisible");

@@ -1,7 +1,7 @@
-export const ASSETS_DIR = "/assets";
-export const HEARTBEAT_INTERVAL = 30000;
+const ASSETS_DIR = "/assets";
+const HEARTBEAT_INTERVAL = 30000;
 
-export const TAG_FRIENDLY_NAMES = {
+const TAG_FRIENDLY_NAMES = {
   "applelogo": "Boot logo",
   "devicetree": "Device tree",
   "kernelcache": "Kernelcache",
@@ -13,7 +13,7 @@ export const TAG_FRIENDLY_NAMES = {
   "ibss": "iBSS",
   "iboot": "iBoot"
 };
-export const EXTENSION_ICONS = {
+const EXTENSION_ICONS = {
   "png": "image",
   "jpg": "image",
   "jpeg": "image",
@@ -36,7 +36,7 @@ export const EXTENSION_ICONS = {
 
   "txt": "text"
 };
-export const TAG_ICONS = {
+const TAG_ICONS = {
   "ibootim": "image",
   "applelogo": "applelogo",
   "iboot": "iboot",
@@ -44,4 +44,4 @@ export const TAG_ICONS = {
   "ibss": "iboot",
   "ibec": "iboot"
 };
-export const DIR_LIKE_FILES = ["dmg", "aea"];
+const DIR_LIKE_FILES = ["dmg", "aea"];

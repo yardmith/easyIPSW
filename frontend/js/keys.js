@@ -1,5 +1,3 @@
-import * as C from "./constants.js";
-
 window.onload = async () => {
   const request = await fetch("keys?json");
   const keys = await request.json();
@@ -20,8 +18,8 @@ window.onload = async () => {
     clone.querySelector('[data-field="filename"]').innerText = info.filename;
 
     let tag = "tag" in info ? info.tag.split("|")[0] : null;
-    if (tag && tag in C.TAG_FRIENDLY_NAMES)
-      clone.querySelector('[data-field="tag"]').innerText = C.TAG_FRIENDLY_NAMES[tag];
+    if (tag && tag in TAG_FRIENDLY_NAMES)
+      clone.querySelector('[data-field="tag"]').innerText = TAG_FRIENDLY_NAMES[tag];
     else
       clone.querySelector('[data-field="tag"]').classList.add("hidden");
 
