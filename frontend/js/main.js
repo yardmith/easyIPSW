@@ -104,7 +104,7 @@ window.onload = () => {
         ws.close();
       } else {
         initInitPage();
-        percent = 0;
+        let percent = 0;
 
         let bytesDone;
         let bytesTotal;
@@ -145,7 +145,7 @@ window.onload = () => {
         extractingBar.classList.add("hidden");
         extractingDmg = false;
       } else {
-        percent = 0;
+        let percent = 0;
 
         let bytesDone;
         let bytesTotal;
