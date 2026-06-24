@@ -24,12 +24,12 @@
     <div class="text-slate-600 dark:text-zinc-400">Decryption keys</div>
   </div>
 
-  <div id="items" class="flex flex-col items-center gap-8 w-4/10">
+  <div id="items" class="flex flex-col items-center gap-8 w-full sm:w-4/10 min-w-120 pl-2 pr-2 sm:p-0">
     <a href="keys?json" class="ms-auto bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border-1 border-solid border-slate-300 dark:border-zinc-600 rounded-lg p-2 shadow-xl/2 dark:shadow-none transition">JSON</a>
 
     <div id="no-keys" class="hidden">No keys found</div>
 
-    <div id="key-template" class="flex flex-col items-center bg-slate-100 dark:bg-zinc-800 border-1 border-solid border-slate-300 dark:border-zinc-600 w-full min-w-100 h-max rounded-3xl shadow-xl/2 dark:shadow-none p-4 gap-6 hidden">
+    <div id="key-template" class="flex flex-col items-center bg-slate-100 dark:bg-zinc-800 border-1 border-solid border-slate-300 dark:border-zinc-600 w-full h-max rounded-3xl shadow-xl/2 dark:shadow-none p-4 gap-6 hidden">
       <div class="flex flex-row justify-start items-baseline w-full">
         <div data-field="tag">Tag</div>
         <div data-field="filename" class="font-[Source_Code_Pro] text-slate-600 dark:text-zinc-300 ms-auto text-sm bg-slate-200 dark:bg-zinc-700 rounded-sm">Filename</div>
