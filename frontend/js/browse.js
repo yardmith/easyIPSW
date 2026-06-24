@@ -1,3 +1,13 @@
+let browsePath = "/" + window.location.pathname.split("/").slice(3).join("/");
+let heartbeat;
+let initializing = true;
+let selectedFile;
+let selectedFileParentPath;
+let extractingDmg = false;
+let pushStateOnNextListing = false;
+let disconnected = false;
+let extractedDmgs = [];
+
 function bytesToUnitsString(bytes) {
   if (!bytes && bytes !== 0) return "Unknown";
 
@@ -21,6 +31,22 @@ function removeTrailingSlash(path) {
     path = path.slice(0, -1);
   }
   return path;
+}
+
+function pathNeedsDmgExtraction(path) {
+  path = removeTrailingSlash(path);
+  if (!path.includes(".dmg")) return false;
+
+  let pathParts = path.split("/");
+  for (let i = 0; i < pathParts.length; i++) {
+    let part = pathParts[i];
+    if (part.includes(".dmg")) {
+      if (extractedDmgs.includes(part)) return false;
+      return part;
+    }
+  }
+
+  return false;
 }
 
 window.onload = () => {
@@ -47,13 +73,41 @@ window.onload = () => {
 
   const ipswId = window.location.pathname.split("/")[1];
   const ws = new WebSocket(`wss://${window.location.host}/${ipswId}/ws`);
-  let browsePath = "/" + window.location.pathname.split("/").slice(3).join("/");
-  let initializing = true;
-  let selectedFile = null;
-  let selectedFileParentPath = null;
-  let extractingDmg = false;
-  let pushStateOnNextListing = false;
-  let disconnected = false;
+
+  function hideInfoViews() {
+    for (let i = 0; i < infoView.children.length; i++) {
+      let child = infoView.children[i];
+      if (child.id != "info-view-file") child.classList.add("hidden");
+    }
+  }
+
+  function changeInfoView(view) {
+    hideInfoViews();
+    view.classList.remove("hidden");
+  }
+
+  function getListingElementFromFilename(filename) {
+    return listingFilesView.querySelector(`[data-filename="${filename}"]`);
+  }
+
+  function setSelectedFile(listingElement) {
+    if (selectedFile) selectedFile.classList.remove("bg-slate-200", "dark:bg-zinc-700");
+    selectedFile = listingElement;
+    selectedFileParentPath = browsePath;
+    listingElement.classList.add("bg-slate-200", "dark:bg-zinc-700");
+  }
+
+  function setInfoViewFileLabel(filename) {
+    infoViewFilename.innerText = filename;
+
+    let listingElement = getListingElementFromFilename(filename);
+    if (listingElement) {
+      infoViewIcon.src = listingElement.querySelector('[data-field="icon"]').src;
+      infoViewIcon.alt = listingElement.querySelector('[data-field="icon"]').alt;
+    }
+
+    infoViewFile.classList.remove("hidden");
+  }
 
   function sendCommand(command, args) {
     ws.send(JSON.stringify({"command": command, ...args}));
@@ -65,18 +119,18 @@ window.onload = () => {
 
     browsePath = path;
 
+    let dmgToExtract = pathNeedsDmgExtraction(path);
+    if (dmgToExtract && !extractingDmg) {
+      extractingDmg = dmgToExtract;
+      setInfoViewFileLabel(dmgToExtract);
+      changeInfoView(infoViewExtracting);
+    }
+
     pushStateOnNextListing = pushState;
     sendCommand("listing", {"location": path});
   }
-    
-  function hideInfoViews() {
-    for (let i = 0; i < infoView.children.length; i++) {
-      let child = infoView.children[i];
-      if (child.id != "info-view-file") child.classList.add("hidden");
-    }
-  }
 
-  ws.addEventListener("message", () => {
+  ws.onmessage = (event) => {
     let data = JSON.parse(event.data);
 
     if (initializing) {
@@ -237,32 +291,20 @@ window.onload = () => {
 
         let targetPath = removeTrailingSlash(browsePath) + "/" + filename;
         clone.onclick = () => {
-          if (info.is_dir) {
-            navigateTo(targetPath);
-          } else if (!info.extracted) {
-            if (selectedFile) selectedFile.classList.remove("bg-slate-200", "dark:bg-zinc-700");
-            selectedFile = clone;
-            selectedFileParentPath = browsePath;
-            clone.classList.add("bg-slate-200", "dark:bg-zinc-700");
+          let is_dir_like = DIR_LIKE_FILES.includes(extension);
 
-            infoViewFilename.innerText = filename;
-            infoViewIcon.src = clone.querySelector('[data-field="icon"]').src;
-            infoViewIcon.alt = clone.querySelector('[data-field="icon"]').alt;
-            infoViewFile.classList.remove("hidden");
-            infoViewStart.classList.add("hidden");
+          if (!info.is_dir && !info.extracted && !(extractingDmg && is_dir_like)) {
+            if (is_dir_like) {
+              clone.querySelector('[data-field="dir-arrow"]').src = "/assets/loader.svg";
+              clone.querySelector('[data-field="dir-arrow"]').classList.add("animate-spin");
+            }
+            setSelectedFile(clone);
+            setInfoViewFileLabel(filename, tag);
           }
 
-          if (DIR_LIKE_FILES.includes(extension) && !extractingDmg) {
-            extractingDmg = !info.extracted ? filename : false;
+          if (info.is_dir || is_dir_like) {
+            if (info.extracted) extractedDmgs.push(filename);
             navigateTo(targetPath);
-            if (extractingDmg) {
-              hideInfoViews();
-              clone.querySelector('[data-field="dir-arrow"]').src = `${ASSETS_DIR}/loader.svg`;
-              clone.querySelector('[data-field="dir-arrow"]').classList.add("animate-spin");
-              extractingBarFill.style.width = "0%";
-              extractingStatus.innerText = "Waiting...";
-              infoViewExtracting.classList.remove("hidden");
-            }
           }
         };
 
@@ -277,7 +319,7 @@ window.onload = () => {
         listingFilesView.appendChild(clone);
       }
     }
-  });
+  };
 
   window.onpopstate = (event) => {
     if (event.state && event.state.path) {
@@ -287,24 +329,28 @@ window.onload = () => {
     }
   };
 
-  ws.addEventListener("open", (event) => {
+  ws.onopen = () => {
     if (initializing) sendCommand("cache");
-    setTimeout(() => {
+
+    heartbeat = setInterval(() => {
       sendCommand("ping");
     }, HEARTBEAT_INTERVAL);
-  });
-  ws.addEventListener("error", (event) => {
+  };
+
+  ws.onerror = () => {
     listingPage.classList.add("invisible");
     initPage.classList.remove("invisible");
     initBar.classList.add("hidden");
     initStatus.innerText = "Error: Failed to connect to server";
     disconnected = true;
-  });
-  ws.addEventListener("close", () => {
+  };
+
+  ws.onclose = () => {
     if (disconnected) return;
+    clearInterval(heartbeat);
     listingPage.classList.add("invisible");
     initPage.classList.remove("invisible");
     initBar.classList.add("hidden");
     initStatus.innerText = "Disconnected from server, please refresh";
-  });
+  };
 };
