@@ -4,7 +4,6 @@ let initializing = true;
 let selectedFile;
 let selectedFileParentPath;
 let extractingDmg = false;
-let pushStateOnNextListing = false;
 let disconnected = false;
 let extractedDmgs = [];
 
@@ -118,15 +117,20 @@ window.onload = () => {
       path = "/" + path;
 
     browsePath = path;
+    listingFilesView.replaceChildren(listingPathText);
+    listingPathText.classList.remove("invisible");
+    listingPathText.innerHTML = browsePath.replaceAll("/", "<wbr>/");
+    history.pushState({"path": path}, "", removeTrailingSlash(`${window.location.origin}/${ipswId}/browse${path}`));
 
     let dmgToExtract = pathNeedsDmgExtraction(path);
     if (dmgToExtract && !extractingDmg) {
       extractingDmg = dmgToExtract;
       setInfoViewFileLabel(dmgToExtract);
       changeInfoView(infoViewExtracting);
+      extractingStatus.innerText = "Waiting...";
+      extractingBarFill.style.width = "0%";
     }
 
-    pushStateOnNextListing = pushState;
     sendCommand("listing", {"location": path});
   }
 
@@ -154,7 +158,7 @@ window.onload = () => {
         initStatus.innerText = `Error: ${data.message}`;
         initBar.classList.add("hidden");
         ws.close();
-      } else {
+      } else if (data.status != "listing") {
         initInitPage();
         let percent = 0;
 
@@ -188,7 +192,7 @@ window.onload = () => {
     }
 
     if (extractingDmg) {
-      if (data.status == "listing") {
+      if (data.status == "done") {
         extractingDmg = false;
         extractingStatus.innerText = "Done";
         extractingBarFill.style.width = "100%";
@@ -226,13 +230,15 @@ window.onload = () => {
     }
 
     if (data.status == "listing") {
-      if (pushStateOnNextListing)
-        history.pushState({"path": browsePath}, "", removeTrailingSlash(`${window.location.origin}/${ipswId}/browse${browsePath}`));
-        pushStateOnNextListing = false;
-
-      listingFilesView.replaceChildren(listingPathText);
-      listingPathText.classList.remove("invisible");
-      listingPathText.innerHTML = browsePath.replaceAll("/", "<wbr>/");
+      let listing = Object.entries(data.listing);
+      let lastDirPos = -1;
+      listing.forEach((file, index) => {
+        if (file[1].is_dir) {
+          lastDirPos++;
+          listing.splice(index, 1);
+          listing.splice(lastDirPos, 0, file);
+        }
+      });
 
       if (browsePath.split("/")[1] != "") {
         let parentEntry = listingFileTemplate.cloneNode(true);
@@ -251,16 +257,6 @@ window.onload = () => {
         listingFilesView.appendChild(parentEntry);
       }
 
-      let listing = Object.entries(data.listing);
-      let lastDirPos = -1;
-      listing.forEach((file, index) => {
-        if (file[1].is_dir) {
-          lastDirPos++;
-          listing.splice(index, 1);
-          listing.splice(lastDirPos, 0, file);
-        }
-      });
-
       for (const [filename, info] of listing) {
         let clone = listingFileTemplate.cloneNode(true);
         clone.querySelector('[data-field="filename"]').innerText = filename;
@@ -275,8 +271,13 @@ window.onload = () => {
         }
 
         let extension = filename.split(".").pop();
-        if (info.is_dir || DIR_LIKE_FILES.includes(extension)) 
+        if (info.is_dir || DIR_LIKE_FILES.includes(extension))
           clone.querySelector('[data-field="dir-arrow"]').classList.remove("hidden");
+
+        if (extractingDmg == filename) {
+          clone.querySelector('[data-field="dir-arrow"]').src = "/assets/loader.svg";
+          clone.querySelector('[data-field="dir-arrow"]').classList.add("animate-spin");
+        }
 
         if (info.is_dir) {
           clone.querySelector('[data-field="icon"]').src = `${ASSETS_DIR}/dir.svg`;
@@ -293,17 +294,14 @@ window.onload = () => {
         clone.onclick = () => {
           let is_dir_like = DIR_LIKE_FILES.includes(extension);
 
-          if (!info.is_dir && !info.extracted && !(extractingDmg && is_dir_like)) {
-            if (is_dir_like) {
-              clone.querySelector('[data-field="dir-arrow"]').src = "/assets/loader.svg";
-              clone.querySelector('[data-field="dir-arrow"]').classList.add("animate-spin");
-            }
+          let clickedOtherDmgWhileExtracting = extractingDmg && is_dir_like && filename != extractingDmg;
+
+          if (!info.is_dir && !info.extracted && !clickedOtherDmgWhileExtracting) {
             setSelectedFile(clone);
             setInfoViewFileLabel(filename, tag);
           }
 
-          if (info.is_dir || is_dir_like) {
-            if (info.extracted) extractedDmgs.push(filename);
+          if ((info.is_dir || is_dir_like) && !clickedOtherDmgWhileExtracting) {
             navigateTo(targetPath);
           }
         };
@@ -316,6 +314,7 @@ window.onload = () => {
         clone.removeAttribute("id");
         clone.setAttribute("data-filename", filename);
         clone.classList.remove("hidden");
+        if (info.extracted && !extractedDmgs.includes(filename)) extractedDmgs.push(filename);
         listingFilesView.appendChild(clone);
       }
     }

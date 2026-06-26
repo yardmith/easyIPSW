@@ -102,10 +102,9 @@ class IpswWs implements MessageComponentInterface {
           $job = extractDmg($dmgToExtract, $this->loop);
           subscribeToJobAsync($job, function($status, $data) use ($from, $location) {
             $this->setHasJob($from, $status);
+            $this->sendStatus($from, $status, extra_fields: $data);
             if ($status == "done") {
               $this->sendStatus($from, "listing", null, ["listing" => getDirListing($location)]);
-            } else {
-              $this->sendStatus($from, $status, extra_fields: $data);
             }
           }, $this->loop);
         } elseif (!is_file($location)) {
