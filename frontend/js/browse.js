@@ -48,6 +48,18 @@ function pathNeedsDmgExtraction(path) {
   return false;
 }
 
+function getIconNameForFile(filename, tag = null) {
+  let extension = filename.split(".").pop();
+
+  if (tag in TAG_ICONS) {
+    return TAG_ICONS[tag];
+  } else if (extension in EXTENSION_ICONS) {
+    return EXTENSION_ICONS[extension];
+  }
+
+  return "file";
+}
+
 window.onload = () => {
   const initPage = document.getElementById("init-page");
   const initBar = document.getElementById("init-progress-bar");
@@ -96,14 +108,12 @@ window.onload = () => {
     listingElement.classList.add("bg-slate-200", "dark:bg-zinc-700");
   }
 
-  function setInfoViewFileLabel(filename) {
+  function setInfoViewFileLabel(filename, tag = null) {
     infoViewFilename.innerText = filename;
 
-    let listingElement = getListingElementFromFilename(filename);
-    if (listingElement) {
-      infoViewIcon.src = listingElement.querySelector('[data-field="icon"]').src;
-      infoViewIcon.alt = listingElement.querySelector('[data-field="icon"]').alt;
-    }
+    let icon = getIconNameForFile(filename, tag);
+    infoViewIcon.src = `${ASSETS_DIR}/${icon}.svg`;
+    infoViewIcon.alt = icon;
 
     infoViewFile.classList.remove("hidden");
   }
@@ -194,6 +204,7 @@ window.onload = () => {
 
     if (extractingDmg) {
       if (data.status == "done") {
+        extractedDmgs.push(extractingDmg);
         extractingDmg = false;
         extractingStatus.innerText = "Done";
         extractingBarFill.style.width = "100%";
@@ -278,19 +289,17 @@ window.onload = () => {
           clone.querySelector('[data-field="dir-arrow"]').classList.remove("hidden");
 
         if (extractingDmg == filename) {
-          clone.querySelector('[data-field="dir-arrow"]').src = "/assets/loader.svg";
+          clone.querySelector('[data-field="dir-arrow"]').src = `${ASSETS_DIR}/loader.svg`;
           clone.querySelector('[data-field="dir-arrow"]').classList.add("animate-spin");
         }
 
         if (info.is_dir) {
           clone.querySelector('[data-field="icon"]').src = `${ASSETS_DIR}/dir.svg`;
           clone.querySelector('[data-field="icon"]').alt = "Directory";
-        } else if (tag in TAG_ICONS) {
-          clone.querySelector('[data-field="icon"]').src = `${ASSETS_DIR}/${TAG_ICONS[tag]}.svg`;
-          clone.querySelector('[data-field="icon"]').alt = TAG_ICONS[tag];
-        } else if (extension in EXTENSION_ICONS) {
-          clone.querySelector('[data-field="icon"]').src = `${ASSETS_DIR}/${EXTENSION_ICONS[extension]}.svg`;
-          clone.querySelector('[data-field="icon"]').alt = EXTENSION_ICONS[extension];
+        } else {
+          let icon = getIconNameForFile(filename, tag);
+          clone.querySelector('[data-field="icon"]').src = `${ASSETS_DIR}/${icon}.svg`;
+          clone.querySelector('[data-field="icon"]').alt = icon;
         }
 
         let targetPath = removeTrailingSlash(browsePath) + "/" + filename;
