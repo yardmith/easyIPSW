@@ -129,6 +129,7 @@ window.onload = () => {
       changeInfoView(infoViewExtracting);
       extractingStatus.innerText = "Waiting...";
       extractingBarFill.style.width = "0%";
+      listingPathText.innerHTML += LISTING_PATH_EXTRACTING_TEXT;
     }
 
     sendCommand("listing", {"location": path});
@@ -230,6 +231,8 @@ window.onload = () => {
     }
 
     if (data.status == "listing") {
+      listingPathText.innerHTML = listingPathText.innerHTML.replaceAll(LISTING_PATH_EXTRACTING_TEXT, "");
+
       let listing = Object.entries(data.listing);
       let lastDirPos = -1;
       listing.forEach((file, index) => {
@@ -294,14 +297,7 @@ window.onload = () => {
         clone.onclick = () => {
           let is_dir_like = DIR_LIKE_FILES.includes(extension);
 
-          let clickedOtherDmgWhileExtracting = extractingDmg && is_dir_like && filename != extractingDmg;
-
-          if (!info.is_dir && !info.extracted && !clickedOtherDmgWhileExtracting) {
-            setSelectedFile(clone);
-            setInfoViewFileLabel(filename, tag);
-          }
-
-          if ((info.is_dir || is_dir_like) && !clickedOtherDmgWhileExtracting) {
+          if ((info.is_dir || is_dir_like) && !(extractingDmg && is_dir_like && filename != extractingDmg)) {
             navigateTo(targetPath);
           }
         };

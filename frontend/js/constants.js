@@ -1,5 +1,6 @@
 const ASSETS_DIR = "/assets";
 const HEARTBEAT_INTERVAL = 30000;
+const LISTING_PATH_EXTRACTING_TEXT = " - Extracting...";
 
 const TAG_FRIENDLY_NAMES = {
   "applelogo": "Boot logo",
