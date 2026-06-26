@@ -158,7 +158,7 @@ window.onload = () => {
         initStatus.innerText = `Error: ${data.message}`;
         initBar.classList.add("hidden");
         ws.close();
-      } else if (data.status != "listing") {
+      } else {
         initInitPage();
         let percent = 0;
 
@@ -200,7 +200,7 @@ window.onload = () => {
         extractingStatus.innerText = `Error: ${data.message}`;
         extractingBar.classList.add("hidden");
         extractingDmg = false;
-      } else {
+      } else if (data.status != "listing") {
         let percent = 0;
 
         let bytesDone;
