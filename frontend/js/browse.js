@@ -159,7 +159,7 @@ window.onload = () => {
         initStatus.innerText = `Error: ${data.message}`;
         initBar.classList.add("hidden");
         ws.close();
-      } else {
+      } else if (data.status == "downloading" || data.status == "extracting") {
         initInitPage();
         let percent = 0;
 
@@ -201,7 +201,7 @@ window.onload = () => {
         extractingStatus.innerText = `Error: ${data.message}`;
         extractingBar.classList.add("hidden");
         extractingDmg = false;
-      } else if (data.status != "listing") {
+      } else if (data.status == "decrypting" || data.status == "extracting") {
         let percent = 0;
 
         let bytesDone;
