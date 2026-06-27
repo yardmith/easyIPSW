@@ -540,7 +540,12 @@ function cacheIpswContents($id, LoopInterface $loop) {
       return;
     }
 
+    $makingCacheDir = !is_dir(CACHE_DIR);
     mkdir($cachePath, recursive: true);
+    if ($makingCacheDir) {
+      $permissionsProcess = new Process("chown :" . escapeshellarg(SHARED_OWNERSHIP_GROUP) . " " . escapeshellarg(CACHE_DIR) . " && chmod 775 " . escapeshellarg(CACHE_DIR) . " && setfacl -d -m g::rwx " . escapeshellarg(CACHE_DIR) . " && chmod g+s " . escapeshellarg(CACHE_DIR));
+      $permissionsProcess->start();
+    }
 
     $process = new Process(BIN_DIR . "aria2c --show-console-readout false --summary-interval 1 -x " . ARIA2_CONNECTIONS . " -s " . ARIA2_CONNECTIONS . " -d " . escapeshellarg($cachePath) . " -o ipsw.zip " . escapeshellarg($info->url));
     $process->start();
