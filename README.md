@@ -4,7 +4,7 @@
   # [easyIPSW](https://ipsw.adamenglish.net/)
 </div>
 
-A simple, intuitive way to browse the various propriety and encrypted formats found within IPSWs, right from the comfort of your web browser.
+A simple and intuitive way to browse through the various propriety, encrypted formats found within IPSWs, right from the comfort of your web browser.
 
 Apple's firmware files contain many encrypted files in several different formats. These require finding decryption keys online, running command-line tools, and oftentimes a fair bit of head banging to view their contents. This project cuts out all of that work and makes it way easier to find what you need, or even just want to take a look at, inside any IPSW, with a familiar file browsing interface.
 
