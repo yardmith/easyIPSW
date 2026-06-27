@@ -83,7 +83,8 @@ window.onload = () => {
   const extractingStatus = document.getElementById("extracting-status-text");
 
   const ipswId = window.location.pathname.split("/")[1];
-  const ws = new WebSocket(`wss://${window.location.host}/${ipswId}/ws`);
+  const wsProtocol = window.location.protocol == "https:" ? "wss" : "ws";
+  const ws = new WebSocket(`${wsProtocol}://${window.location.host}/${ipswId}/ws`);
 
   function hideInfoViews() {
     for (let i = 0; i < infoView.children.length; i++) {
