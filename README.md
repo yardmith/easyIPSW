@@ -43,14 +43,16 @@ Apple's firmware files contain many encrypted files in several different formats
       ```
       server {
         listen 80;
-        listen 443 ssl;
         root /path/to/cloned/repo;
         server_name your.domain.com;
 
         index index.php;
 
-        ssl_certificate /path/to/your/cert.pem;
-        ssl_certificate_key /path/to/your/key.pem;
+        # If you want SSL, uncomment these lines below
+
+        # listen 443 ssl;
+        # ssl_certificate /path/to/your/cert.pem;
+        # ssl_certificate_key /path/to/your/key.pem;
 
         location ~ /assets/|/js/ {
           try_files /frontend/$uri /frontend/$uri/ =404;
@@ -107,23 +109,28 @@ Apple's firmware files contain many encrypted files in several different formats
     ```
     extension=redis.so
     ```
-    And enable the `pdo_sqlite` extension if you haven't already:
+7. Install the `pdo_sqlite` PHP extension:
     ```
-    extension=pdo_sqlite
+    sudo apt install php-sqlite3
     ```
-    You should already have the above line somewhere in your `php.ini`, and just need to uncomment it by removing the preceding semicolon (`;`).
-7. Set up a Python virtual environment within the `aea` directory (needed for AEA decryption):
+    (Note: you do not need to edit your `php.ini` to enable this extension like with Redis)
+8. Install packages needed by Python:
+    ```
+    sudo apt install python3-venv python3-dev build-essential
+    ```
+9. Set up a Python virtual environment within the `aea` directory (for AEA decryption to work):
     ```
     cd aea
     python3 -m venv .venv
     source .venv/bin/activate
     ```
-8. Install packages:
+10. Install Python packages:
     ```
     pip3 install -r requirements.txt
     ```
-9. Return to the root directory of the project:
+11. Deactivate the virtual environment and return to the root directory of the project:
     ```
+    deactivate
     cd ..
     ```
 
