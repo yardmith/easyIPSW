@@ -1,6 +1,7 @@
 const ASSETS_DIR = "/assets";
 const HEARTBEAT_INTERVAL = 30000;
-const LISTING_PATH_EXTRACTING_TEXT = " - Extracting...";
+const LISTING_PATH_EXTRACTING_TEXT = " - <wbr>Extracting...";
+const MOBILE_CONTEXT_MENU_HOLD_SECONDS = 0.5;
 
 const TAG_FRIENDLY_NAMES = {
   "applelogo": "Boot logo",

@@ -9,7 +9,7 @@ require_once "db_utils.php";
 require_once "constants.php";
 require_once "job_utils.php";
 
-function pathNeedsDmgExtraction($path, $allowDmgAsLastPathLevel = false) {
+function pathNeedsDmgExtraction($path, $allowDmgAsLastPathLevel = false, $allowExtracted = false) {
   $path = rtrim($path, "/");
   if (!str_contains($path, ".dmg")) return false;
 
@@ -25,7 +25,7 @@ function pathNeedsDmgExtraction($path, $allowDmgAsLastPathLevel = false) {
   }
 
   $dmgPath = implode("/", $pathParts);
-  if (is_dir($dmgPath)) return false;
+  if (is_dir($dmgPath) && !$allowExtracted) return false;
   if ($dmgPath == $path && !$allowDmgAsLastPathLevel) return false;
   return $dmgPath;
 }
@@ -239,10 +239,10 @@ function extractDmg($path, LoopInterface $loop) {
     });
 
     $process->on("exit", function() use ($path, $job, $totalSteps) {
-      $process = new Process("find " . escapeshellarg($path) . " -print0 | xargs -0 -P 0 -n 100 chown :" . escapeshellarg(SHARED_OWNERSHIP_GROUP));
+      $process = new Process("find " . escapeshellarg("$path.extracting") . " -print0 | xargs -0 -P 0 -n 100 chown :" . escapeshellarg(SHARED_OWNERSHIP_GROUP));
       $process->start();
       $process->on("exit", function() use ($job, $path, $totalSteps) {
-        $process = new Process("find " . escapeshellarg($path) . " -print0 | xargs -0 -P 0 -n 100 chmod 775");
+        $process = new Process("find " . escapeshellarg("$path.extracting") . " -print0 | xargs -0 -P 0 -n 100 chmod 775");
         $process->start();
         $process->on("exit", function() use ($job, $path, $totalSteps) {
           rename("$path.extracting", $path);

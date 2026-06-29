@@ -6,6 +6,9 @@ let selectedFileParentPath;
 let extractingDmg = false;
 let disconnected = false;
 let extractedDmgs = [];
+let dmgInfo = [];
+let contextMenuOpened = false;
+let isMouse = false;
 
 function bytesToUnitsString(bytes) {
   if (!bytes && bytes !== 0) return "Unknown";
@@ -22,7 +25,7 @@ function bytesToUnitsString(bytes) {
     amount /= 1024;
   }
 
-  return `${Math.round(amount)} ${units[unit]}`;
+  return `${Math.round(amount * 10) / 10} ${units[unit]}`;
 }
 
 function removeTrailingSlash(path) {
@@ -73,23 +76,37 @@ window.onload = () => {
   listingFileTemplate.remove();
 
   const infoView = document.getElementById("listing-info-view");
-  const infoViewFile = document.getElementById("info-view-file");
-  const infoViewIcon = document.getElementById("info-view-icon");
-  const infoViewFilename = document.getElementById("info-view-filename");
+  const infoViewFileStats = document.getElementById("info-view-file-stats");
+  const infoViewIcon = document.getElementById("info-view-stats-icon");
+  const infoViewFilename = document.getElementById("info-view-stats-filename");
+  const infoViewTag = document.getElementById("info-view-stats-tag");
+  const infoViewSize = document.getElementById("info-view-stats-size");
+  const infoViewDownloadLink = document.getElementById("info-view-stats-download");
   const infoViewStart = document.getElementById("info-start");
   const infoViewExtracting = document.getElementById("info-extracting");
   const extractingBar = document.getElementById("extracting-progress-bar");
   const extractingBarFill = document.getElementById("extracting-progress-bar-fill");
   const extractingStatus = document.getElementById("extracting-status-text");
 
+  const contextMenu = document.getElementById("context-menu");
+  const contextMenuFilename = document.getElementById("context-menu-filename");
+  const contextMenuInfoAction = document.getElementById("context-menu-action-info");
+  const contextMenuDownloadAction = document.getElementById("context-menu-action-download");
+  const contextMenuDownloadRawAction = document.getElementById("context-menu-action-download-raw");
+
   const ipswId = window.location.pathname.split("/")[1];
   const wsProtocol = window.location.protocol == "https:" ? "wss" : "ws";
   const ws = new WebSocket(`${wsProtocol}://${window.location.host}/${ipswId}/ws`);
 
+  function getRawUrl(filename, path = browsePath) {
+    if (path == "/") path = "";
+    return `/${ipswId}/raw${path}/${filename}`;
+  }
+
   function hideInfoViews() {
     for (let i = 0; i < infoView.children.length; i++) {
       let child = infoView.children[i];
-      if (child.id != "info-view-file") child.classList.add("hidden");
+      if (child.id != infoViewFileStats.id) child.classList.add("hidden");
     }
   }
 
@@ -109,14 +126,25 @@ window.onload = () => {
     listingElement.classList.add("bg-slate-200", "dark:bg-zinc-700");
   }
 
-  function setInfoViewFileLabel(filename, tag = null) {
+  function setInfoViewFileStats(filename, size, tag = null) {
     infoViewFilename.innerText = filename;
+    
+    if (tag && TAG_FRIENDLY_NAMES[tag]) {
+      infoViewTag.innerText = `(${TAG_FRIENDLY_NAMES[tag]})`;
+      infoViewTag.classList.remove("hidden");
+    } else {
+      infoViewTag.classList.add("hidden");
+    }
+
+    infoViewSize.innerText = bytesToUnitsString(size);
 
     let icon = getIconNameForFile(filename, tag);
     infoViewIcon.src = `${ASSETS_DIR}/${icon}.svg`;
     infoViewIcon.alt = icon;
 
-    infoViewFile.classList.remove("hidden");
+    infoViewDownloadLink.href = getRawUrl(filename);
+
+    infoViewFileStats.classList.remove("hidden");
   }
 
   function sendCommand(command, args) {
@@ -136,7 +164,7 @@ window.onload = () => {
     let dmgToExtract = pathNeedsDmgExtraction(path);
     if (dmgToExtract && !extractingDmg) {
       extractingDmg = dmgToExtract;
-      setInfoViewFileLabel(dmgToExtract);
+      setInfoViewFileStats(dmgToExtract, dmgInfo[dmgToExtract].size, dmgInfo[dmgToExtract].tag);
       changeInfoView(infoViewExtracting);
       extractingStatus.innerText = "Waiting...";
       extractingBarFill.style.width = "0%";
@@ -144,6 +172,13 @@ window.onload = () => {
     }
 
     sendCommand("listing", {"location": path});
+  }
+
+  function dismissContextMenu() {
+    contextMenu.classList.remove("opacity-100", "visible");
+    contextMenu.classList.add("opacity-0");
+    contextMenu.style.left = "0";
+    contextMenu.style.top = "0";
   }
 
   ws.onmessage = (event) => {
@@ -163,7 +198,10 @@ window.onload = () => {
         setTimeout(() => {
           initPage.classList.add("invisible");
           listingPage.classList.remove("invisible");
-          navigateTo(browsePath, false);
+          if (pathNeedsDmgExtraction(browsePath))
+            sendCommand("dmginfo", {"path": browsePath});
+          else
+            navigateTo(browsePath, false);
         }, initPage.classList.contains("invisible") ? 0 : 1000);
       } else if (data.status == "error") {
         initInitPage();
@@ -310,6 +348,67 @@ window.onload = () => {
           if ((info.is_dir || is_dir_like) && !(extractingDmg && is_dir_like && filename != extractingDmg)) {
             navigateTo(targetPath);
           }
+
+          if (!info.is_dir && !is_dir_like) {
+            setSelectedFile(clone);
+            setInfoViewFileStats(filename, info.size, tag);
+            // showFilePreview(filename);
+          }
+        };
+
+        let openContextMenu = (event) => {
+          contextMenu.classList.remove("opacity-0");
+          contextMenu.classList.add("opacity-100", "visible");
+          contextMenu.style.left = `${event.clientX}px`;
+          contextMenu.style.top = `${event.clientY}px`;
+
+          contextMenuFilename.innerText = filename;
+
+          if (info.is_dir) {
+            contextMenuInfoAction.classList.add("hidden");
+          } else {
+            contextMenuInfoAction.classList.remove("hidden");
+            contextMenuInfoAction.onclick = () => {
+              dismissContextMenu();
+              setSelectedFile(clone);
+              setInfoViewFileStats(filename, info.size, tag);
+              // showFilePreview(filename);
+            };
+          }
+
+          if (extension == "png") {
+            contextMenuDownloadAction.href = getRawUrl(filename) + "?defry";
+            contextMenuDownloadRawAction.classList.remove("hidden");
+            contextMenuDownloadRawAction.href = getRawUrl(filename);
+          } else {
+            contextMenuDownloadAction.href = getRawUrl(filename);
+            contextMenuDownloadRawAction.classList.add("hidden");
+          }
+
+          contextMenuDownloadAction.onclick = dismissContextMenu;
+          contextMenuDownloadRawAction.onclick = dismissContextMenu;
+        };
+
+        clone.oncontextmenu = (event) => {
+          event.preventDefault();
+          openContextMenu(event);
+        };
+
+        let holdTimeout = null;
+        clone.onpointerdown = (event) => {
+          if (isMouse) return;
+          holdTimeout = setTimeout(() => {
+            openContextMenu(event);
+            contextMenuOpened = true;
+          }, MOBILE_CONTEXT_MENU_HOLD_SECONDS * 1000);
+        };
+        clone.onpointerup = () => {
+          if (isMouse) return;
+          clearTimeout(holdTimeout);
+        };
+        clone.onpointerleave = () => {
+          if (isMouse) return;
+          clearTimeout(holdTimeout);
         };
 
         if (selectedFile && selectedFileParentPath == browsePath && filename == selectedFile.getAttribute("data-filename")) {
@@ -320,9 +419,22 @@ window.onload = () => {
         clone.removeAttribute("id");
         clone.setAttribute("data-filename", filename);
         clone.classList.remove("hidden");
+        if (filename.includes(".dmg"))
+          dmgInfo[filename] = {
+            "size": info.size,
+            "tag": tag
+          };
         if (info.extracted && !extractedDmgs.includes(filename)) extractedDmgs.push(filename);
         listingFilesView.appendChild(clone);
       }
+    } else if (data.status == "dmginfo") {
+      let filename = pathNeedsDmgExtraction(data.path);
+      if (data.extracted) extractedDmgs.push(filename);
+      dmgInfo[filename] = {
+        "size": data.size,
+        "tag": data.tag.split("|")[0]
+      };
+      navigateTo(data.path, false);
     }
   };
 
@@ -358,4 +470,12 @@ window.onload = () => {
     initBar.classList.add("hidden");
     initStatus.innerText = "Disconnected from server, please refresh";
   };
+
+  document.onclick = (event) => {
+    if (!contextMenu.contains(event.target)) dismissContextMenu();
+  };
+
+  window.addEventListener("mousemove", () => {
+    isMouse = true;
+  }, {once: true});
 };

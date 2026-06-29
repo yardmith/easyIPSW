@@ -30,6 +30,8 @@
   <link rel="preload" href="/assets/list.svg" as="image" type="image/svg+xml">
   <link rel="preload" href="/assets/applelogo.svg" as="image" type="image/svg+xml">
   <link rel="preload" href="/assets/iboot.svg" as="image" type="image/svg+xml">
+  <link rel="preload" href="/assets/download.svg" as="image" type="image/svg+xml">
+  <link rel="preload" href="/assets/info.svg" as="image" type="image/svg+xml">
 </head>
 <body class="font-[Inter] bg-slate-50 dark:bg-zinc-900 text-slate-900 dark:text-zinc-50 overscroll-none scheme-light-dark">
   <div id="init-page" class="flex flex-col gap-4 h-svh items-center justify-center absolute left-0 right-0 invisible">
@@ -51,23 +53,41 @@
       </div>
     </div>
 
-    <div id="listing-files-view" class="flex flex-col p-4 h-1/2 w-full sm:h-full sm:w-1/4 sm:max-w-100 sm:min-w-60 bg-slate-100 dark:bg-zinc-800 border-b-1 sm:border-1 border-solid border-slate-300 dark:border-zinc-700 overflow-y-auto sm:ml-2 sm:mr-2 sm:rounded-4xl sm:shadow-xl/3 dark:shadow-none">
-      <div id="listing-path" class="text-slate-600 text-sm ml-2 dark:text-zinc-400 mb-2 whitespace-nowrap invisible">/path</div>
-      <div id="listing-file-template" class="group/file p-3 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-xl transition cursor-pointer flex flex-row gap-2 items-center hidden">
-        <img data-field="icon" src="/assets/file.svg" alt="File" class="min-w-5 h-5 dark:invert object-contain">
-        <div class="flex flex-row items-baseline grow min-w-0">
-          <div data-field="filename" class="overflow-hidden min-w-0 grow whitespace-nowrap text-ellipsis text-sm">Filename</div>
-          <div data-field="tag" class="text-xs text-slate-600 dark:text-zinc-400 ms-auto group-hover/file:hidden whitespace-nowrap hidden">(Tag)</div>
+    <div class="h-1/2 w-full sm:h-full sm:w-1/4 sm:max-w-100 sm:min-w-60 bg-slate-100 dark:bg-zinc-800 border-b-1 sm:border-1 border-solid border-slate-300 dark:border-zinc-700 sm:ml-2 sm:mr-2 sm:rounded-4xl sm:shadow-xl/3 dark:shadow-none overflow-hidden">
+      <div id="listing-files-view" class="w-full h-full flex flex-col p-4 overflow-y-auto scrollbar-thin">
+        <div id="listing-path" class="text-slate-600 text-sm ml-2 dark:text-zinc-400 mb-2 whitespace-nowrap invisible">/path</div>
+        <div id="listing-file-template" class="select-none group/file p-3 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-xl transition cursor-pointer flex flex-row gap-2 items-center hidden">
+          <img data-field="icon" src="/assets/file.svg" alt="File" class="min-w-5 h-5 dark:invert object-contain">
+          <div class="flex flex-row items-baseline grow min-w-0">
+            <div data-field="filename" class="overflow-hidden min-w-0 grow whitespace-nowrap text-ellipsis text-sm">Filename</div>
+            <div data-field="tag" class="text-xs text-slate-600 dark:text-zinc-400 ms-auto group-hover/file:hidden whitespace-nowrap hidden">(Tag)</div>
+          </div>
+          <img data-field="no-key" src="/assets/no-key.svg" alt="No decryption key available" title="No decryption key available" class="opacity-50 dark:invert min-w-3 h-3 hidden">
+          <img data-field="dir-arrow" src="/assets/chevron-right.svg" alt="Browse directory" class="h-5 dark:invert ms-auto hidden">
         </div>
-        <img data-field="no-key" src="/assets/no-key.svg" alt="No decryption key available" title="No decryption key available" class="opacity-50 dark:invert min-w-3 h-3 hidden">
-        <img data-field="dir-arrow" src="/assets/chevron-right.svg" alt="Browse directory" class="h-5 dark:invert ms-auto hidden">
       </div>
     </div>
 
     <div id="listing-info-view" class="flex flex-col items-center w-full h-full">
-      <div id="info-view-file" class="flex flex-row justify-center items-center gap-2 text-slate-600 w-full h-12 sm:h-10 text-center -mb-12 sm:-mb-10 hidden">
-        <img id="info-view-icon" src="/assets/file.svg" alt="File" class="min-w-5 h-5 dark:invert object-contain">
-        <div id="info-view-filename">File</div>
+      <div id="info-view-file-stats" class="flex flex-row justify-center items-center w-full h-max text-center mt-2 sm:mt-1 hidden">
+        <div class="flex-1"></div>
+
+        <div class="flex flex-col justify-center items-center">
+          <div class="flex flex-row justify-center items-center gap-2">
+            <img id="info-view-stats-icon" src="/assets/file.svg" alt="File" class="min-w-5 h-5 dark:invert object-contain">
+            <div class="flex flex-row items-baseline gap-1">
+              <div id="info-view-stats-filename">File</div>
+              <div id="info-view-stats-tag" class="text-slate-600 dark:text-zinc-400 text-xs hidden">(Tag)</div>
+            </div>
+          </div>
+          <div id="info-view-stats-size" class="text-sm text-slate-600 dark:text-zinc-400">Size</div>
+        </div>
+
+        <div class="flex flex-1 justify-end h-full">
+          <a id="info-view-stats-download" class="ms-auto h-full aspect-square flex justify-center items-center mr-3 hover:bg-slate-200 dark:hover:bg-zinc-700 transition rounded-lg">
+            <img src="/assets/download.svg" alt="Download file" class="h-1/2 dark:invert">
+          </a>
+        </div>
       </div>
 
       <div id="info-start" class="grow w-full sm:w-auto sm:h-full flex flex-col justify-center items-center">
@@ -81,6 +101,25 @@
         <div id="extracting-status-text" class="text-sm">Status</div>
       </div>
     </div>
+  </div>
+
+  <div id="context-menu" class="flex flex-col p-3 bg-slate-100 dark:bg-zinc-800 border-1 border-solid border-slate-300 dark:border-zinc-700 w-80 h-max absolute left-0 right-0 rounded-2xl shadow-xl/3 transition transition-discrete opacity-0 invisible">
+    <div id="context-menu-filename" class="text-slate-600 dark:text-zinc-400 text-xs ml-1 mb-2">048-2955-001.dmg</div>
+
+    <div id="context-menu-action-info" class="flex flex-row items-center gap-2 p-2 w-full h-10 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 cursor-pointer transition">
+      <img src="/assets/info.svg" alt="Info" class="h-7/8 dark:invert">
+      <div class="text-sm">Info</div>
+    </div>
+
+    <a id="context-menu-action-download" class="flex flex-row items-center gap-2 p-2 w-full h-10 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 transition">
+      <img src="/assets/download.svg" alt="Download" class="h-7/8 dark:invert">
+      <div class="text-sm">Download</div>
+    </a>
+
+    <a id="context-menu-action-download-raw" class="flex flex-row items-center gap-2 p-2 w-full h-10 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 transition">
+      <img src="/assets/download.svg" alt="Download" class="h-7/8 dark:invert">
+      <div class="text-sm">Download (raw)</div>
+    </a>
   </div>
 </body>
 </html>

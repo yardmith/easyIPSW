@@ -114,6 +114,25 @@ class IpswWs implements MessageComponentInterface {
         }
         break;
       
+      case "dmginfo":
+        $dmgPath = pathNeedsDmgExtraction("$cachePath" . $msg["path"], allowExtracted: true);
+        $actualPath = $dmgPath;
+        if (is_file("$dmgPath.original")) $actualPath = "$dmgPath.original";
+
+        if (!isset($msg["path"])) {
+          $this->sendStatus($from, "error", "No path specified");
+          return;
+        } elseif (!str_contains($msg["path"], ".dmg")) {
+          $this->sendStatus($from, "error", "The path specified is not a DMG");
+          return;
+        } elseif (!file_exists($actualPath)) {
+          $this->sendStatus($from, "error", "The path specified was not found");
+          return;
+        }
+        
+        $this->sendStatus($from, "dmginfo", extra_fields: ["path" => $msg["path"], "extracted" => !pathNeedsDmgExtraction($dmgPath, true), "tag" => getFileTags($ipswId)[basename($dmgPath)], "size" => filesize($actualPath)]);
+        break;
+      
       case "ping":
         $this->sendStatus($from, "pong");
         break;
