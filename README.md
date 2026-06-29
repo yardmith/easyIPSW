@@ -32,6 +32,7 @@ Apple's firmware files contain many encrypted files in several different formats
   - `redis`
 
   Installation of these extensions is outlined in the next section below.
+- Cron (optional)
 
 ### Setup
 
@@ -95,7 +96,12 @@ Apple's firmware files contain many encrypted files in several different formats
     sudo usermod -aG ipsw www-data
     sudo usermod -aG ipsw your-websocket-user
     ```
-5. Install the `redis` PHP extension:
+5. Fix ownership and permissions on the database file:
+    ```
+    sudo chown :ipsw db.sqlite
+    sudo chmod 775 db.sqlite
+    ```
+6. Install the `redis` PHP extension:
     ```
     sudo pecl install redis
     ```
@@ -105,34 +111,43 @@ Apple's firmware files contain many encrypted files in several different formats
     sudo apt install php-pear php-dev make build-essential
     ```
     Or you can find another way to install the extension.
-6. Enable it by editing your `php.ini` file(s) to add the following line (you will need to do this for both the FPM and CLI versions of PHP):
+7. Enable it by editing your `php.ini` file(s) to add the following line (you will need to do this for both the FPM and CLI versions of PHP):
     ```
     extension=redis.so
     ```
-7. Install the `pdo_sqlite` PHP extension:
+8. Install the `pdo_sqlite` PHP extension:
     ```
     sudo apt install php-sqlite3
     ```
     (Note: you do not need to edit your `php.ini` to enable this extension like with Redis)
-8. Install packages needed by Python:
+9. Install packages needed by Python:
     ```
     sudo apt install python3-venv python3-dev build-essential
     ```
-9. Set up a Python virtual environment within the `aea` directory (for AEA decryption to work):
+10. Set up a Python virtual environment within the `aea` directory (for AEA decryption to work):
     ```
     cd aea
     python3 -m venv .venv
     source .venv/bin/activate
     ```
-10. Install Python packages:
+11. Install Python packages:
     ```
     pip3 install -r requirements.txt
     ```
-11. Deactivate the virtual environment and return to the root directory of the project:
+12. Deactivate the virtual environment and return to the root directory of the project:
     ```
     deactivate
     cd ..
     ```
+13. Configure crontab for periodic cache clearing (optional):
+    ```
+    crontab -e
+    ```
+    Add the following line:
+    ```
+    */15 * * * * /usr/bin/php /path/to/cloned/easyIPSW/cache_purge.php
+    ```
+    Make sure to change the path to correctly point to the `cache_purge.php` maintenance script in the root of the project.
 
 ### Running the WebSocket server
 
