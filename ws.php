@@ -115,7 +115,7 @@ class IpswWs implements MessageComponentInterface {
         break;
       
       case "dmginfo":
-        $dmgPath = pathNeedsDmgExtraction("$cachePath" . $msg["path"], allowExtracted: true);
+        $dmgPath = pathNeedsDmgExtraction("$cachePath" . $msg["path"], true, true);
         $actualPath = $dmgPath;
         if (is_file("$dmgPath.original")) $actualPath = "$dmgPath.original";
 

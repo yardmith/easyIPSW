@@ -532,7 +532,7 @@ function cacheIpswContents($id, LoopInterface $loop) {
     $process->on("exit", function() use ($cachePath, $job) {
       unlink("$cachePath/ipsw.zip");
 
-      $process = new Process("chmod -R 775 " . escapeshellarg($cachePath));
+      $process = new Process("chown -R :" . escapeshellarg(SHARED_OWNERSHIP_GROUP) . " " . escapeshellarg($cachePath) . " && chmod -R 775 " . escapeshellarg($cachePath));
       $process->start();
       $process->on("exit", function() use ($job) {
         removeJob($job, data: [
