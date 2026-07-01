@@ -36,7 +36,17 @@ const EXTENSION_ICONS = {
   "xml": "list",
   "strings": "list",
 
-  "txt": "text"
+  "txt": "text",
+
+  "mp3": "audio",
+  "wav": "audio",
+  "m4a": "audio",
+  "m4r": "audio",
+  "ogg": "audio",
+  "flac": "audio",
+  "aiff": "audio",
+  "caf": "audio",
+  "opus": "audio"
 };
 const TAG_ICONS = {
   "ibootim": "image",
