@@ -90,9 +90,12 @@ window.onload = () => {
 
   const contextMenu = document.getElementById("context-menu");
   const contextMenuFilename = document.getElementById("context-menu-filename");
-  const contextMenuInfoAction = document.getElementById("context-menu-action-info");
-  const contextMenuDownloadAction = document.getElementById("context-menu-action-download");
-  const contextMenuDownloadRawAction = document.getElementById("context-menu-action-download-raw");
+  const contextMenuInfo = document.getElementById("context-menu-info");
+  const contextMenuDownload = document.getElementById("context-menu-download");
+  const contextMenuDownloadRaw = document.getElementById("context-menu-download-raw");
+  const contextMenuDownloadXml = document.getElementById("context-menu-download-xml");
+  const contextMenuDownloadJson = document.getElementById("context-menu-download-json");
+  const contextMenuDownloadDecrypted = document.getElementById("context-menu-download-decrypted");
 
   const ipswId = window.location.pathname.split("/")[1];
   const wsProtocol = window.location.protocol == "https:" ? "wss" : "ws";
@@ -365,10 +368,10 @@ window.onload = () => {
           contextMenuFilename.innerText = filename;
 
           if (info.is_dir) {
-            contextMenuInfoAction.classList.add("hidden");
+            contextMenuInfo.classList.add("hidden");
           } else {
-            contextMenuInfoAction.classList.remove("hidden");
-            contextMenuInfoAction.onclick = () => {
+            contextMenuInfo.classList.remove("hidden");
+            contextMenuInfo.onclick = () => {
               dismissContextMenu();
               setSelectedFile(clone);
               setInfoViewFileStats(filename, info.size, tag);
@@ -376,17 +379,36 @@ window.onload = () => {
             };
           }
 
+          contextMenuDownload.href = getRawUrl(filename);
+          contextMenuDownload.onclick = dismissContextMenu;
+          contextMenuDownloadRaw.onclick = dismissContextMenu;
+          contextMenuDownloadXml.onclick = dismissContextMenu;
+          contextMenuDownloadJson.onclick = dismissContextMenu;
+          contextMenuDownloadDecrypted.onclick = dismissContextMenu;
+
           if (extension == "png") {
-            contextMenuDownloadAction.href = getRawUrl(filename) + "?defry";
-            contextMenuDownloadRawAction.classList.remove("hidden");
-            contextMenuDownloadRawAction.href = getRawUrl(filename);
+            contextMenuDownload.href = getRawUrl(filename) + "?defry";
+            contextMenuDownloadRaw.classList.remove("hidden");
+            contextMenuDownloadRaw.href = getRawUrl(filename);
+          } else if (info.plist_type) {
+            if (info.plist_type != "xml") {
+              contextMenuDownloadXml.href = getRawUrl(filename) + "?xml";
+              contextMenuDownloadXml.classList.remove("hidden");
+            }
+            contextMenuDownloadJson.href = getRawUrl(filename) + "?json";
+            contextMenuDownloadJson.classList.remove("hidden");
           } else {
-            contextMenuDownloadAction.href = getRawUrl(filename);
-            contextMenuDownloadRawAction.classList.add("hidden");
+            contextMenuDownloadRaw.classList.add("hidden");
+            contextMenuDownloadXml.classList.add("hidden");
+            contextMenuDownloadJson.classList.add("hidden");
           }
 
-          contextMenuDownloadAction.onclick = dismissContextMenu;
-          contextMenuDownloadRawAction.onclick = dismissContextMenu;
+          if (info.has_key === true) {
+            contextMenuDownloadDecrypted.href = getRawUrl(filename) + "?decrypt";
+            contextMenuDownloadDecrypted.classList.remove("hidden");
+          } else {
+            contextMenuDownloadDecrypted.classList.add("hidden");
+          }
         };
 
         clone.oncontextmenu = (event) => {
@@ -415,7 +437,7 @@ window.onload = () => {
           selectedFile = clone;
           clone.classList.add("bg-slate-200", "dark:bg-zinc-700");
         }
-        if (info.no_key) clone.querySelector('[data-field="no-key"]').classList.remove("hidden");
+        if (info.has_key === false) clone.querySelector('[data-field="no-key"]').classList.remove("hidden");
         clone.removeAttribute("id");
         clone.setAttribute("data-filename", filename);
         clone.classList.remove("hidden");

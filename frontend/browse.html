@@ -32,6 +32,8 @@
   <link rel="preload" href="/assets/iboot.svg" as="image" type="image/svg+xml">
   <link rel="preload" href="/assets/download.svg" as="image" type="image/svg+xml">
   <link rel="preload" href="/assets/info.svg" as="image" type="image/svg+xml">
+  <link rel="preload" href="/assets/unlock.svg" as="image" type="image/svg+xml">
+  <link rel="preload" href="/assets/no-key.svg" as="image" type="image/svg+xml">
 </head>
 <body class="font-[Inter] bg-slate-50 dark:bg-zinc-900 text-slate-900 dark:text-zinc-50 overscroll-none scheme-light-dark">
   <div id="init-page" class="flex flex-col gap-4 h-svh items-center justify-center absolute left-0 right-0 invisible">
@@ -106,19 +108,34 @@
   <div id="context-menu" class="flex flex-col p-3 bg-slate-100 dark:bg-zinc-800 border-1 border-solid border-slate-300 dark:border-zinc-700 w-80 h-max absolute left-0 right-0 rounded-2xl shadow-xl/3 transition transition-discrete opacity-0 invisible">
     <div id="context-menu-filename" class="text-slate-600 dark:text-zinc-400 text-xs ml-1 mb-2">048-2955-001.dmg</div>
 
-    <div id="context-menu-action-info" class="flex flex-row items-center gap-2 p-2 w-full h-10 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 cursor-pointer transition">
+    <div id="context-menu-info" class="flex flex-row items-center gap-2 p-2 w-full h-10 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 cursor-pointer transition">
       <img src="/assets/info.svg" alt="Info" class="h-7/8 dark:invert">
       <div class="text-sm">Info</div>
     </div>
 
-    <a id="context-menu-action-download" class="flex flex-row items-center gap-2 p-2 w-full h-10 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 transition">
+    <a id="context-menu-download-decrypted" class="flex flex-row items-center gap-2 p-2 w-full h-10 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 transition hidden">
+      <img src="/assets/unlock.svg" alt="Decrypt" class="h-7/8 dark:invert">
+      <div class="text-sm">Decrypt and download</div>
+    </a>
+
+    <a id="context-menu-download" class="flex flex-row items-center gap-2 p-2 w-full h-10 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 transition">
       <img src="/assets/download.svg" alt="Download" class="h-7/8 dark:invert">
       <div class="text-sm">Download</div>
     </a>
 
-    <a id="context-menu-action-download-raw" class="flex flex-row items-center gap-2 p-2 w-full h-10 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 transition">
+    <a id="context-menu-download-raw" class="flex flex-row items-center gap-2 p-2 w-full h-10 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 transition hidden">
       <img src="/assets/download.svg" alt="Download" class="h-7/8 dark:invert">
       <div class="text-sm">Download (raw)</div>
+    </a>
+
+    <a id="context-menu-download-xml" class="flex flex-row items-center gap-2 p-2 w-full h-10 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 transition hidden">
+      <img src="/assets/download.svg" alt="Download" class="h-7/8 dark:invert">
+      <div class="text-sm">Download (XML)</div>
+    </a>
+
+    <a id="context-menu-download-json" class="flex flex-row items-center gap-2 p-2 w-full h-10 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 transition hidden">
+      <img src="/assets/download.svg" alt="Download" class="h-7/8 dark:invert">
+      <div class="text-sm">Download (JSON)</div>
     </a>
   </div>
 </body>

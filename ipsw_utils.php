@@ -435,8 +435,8 @@ function getDirListing($path, $includeTags = true) {
 
       $files[$name] = [
         "size" => filesize($actualPath)
-      ] + ((identifyImg($actualPath) || file_get_contents($actualPath, length: 8) == "encrcdsa") && !getKeyFromPath($filePath) ? [
-        "no_key" => true
+      ] + (identifyImg($actualPath) || file_get_contents($actualPath, length: 8) == "encrcdsa" ? [
+        "has_key" => (bool)getKeyFromPath($filePath)
       ] : []) + (is_dir("$path/$name") && $isDmg ? [
         "extracted" => true
       ] : []) + ($plistType ? [
