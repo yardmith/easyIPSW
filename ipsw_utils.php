@@ -297,6 +297,20 @@ function extractDmg($path, LoopInterface $loop) {
   return $job;
 }
 
+function identifyPlist($path) {
+  if (!is_file($path)) return false;
+
+  $contents = file_get_contents($path, length: 6);
+
+  if (str_contains($contents, "?xml")) {
+    return "xml";
+  } elseif (str_starts_with($contents, "bplist")) {
+    return "binary";
+  } else {
+    return false;
+  }
+}
+
 function getFileTags($ipswId) {
   $tags = [];
   $cachePath = CACHE_DIR . "/$ipswId";
@@ -417,12 +431,16 @@ function getDirListing($path, $includeTags = true) {
       $actualPath = $filePath;
       if (is_file("$path/$name.original")) $actualPath .= ".original";
 
+      $plistType = identifyPlist($actualPath);
+
       $files[$name] = [
         "size" => filesize($actualPath)
       ] + ((identifyImg($actualPath) || file_get_contents($actualPath, length: 8) == "encrcdsa") && !getKeyFromPath($filePath) ? [
         "no_key" => true
       ] : []) + (is_dir("$path/$name") && $isDmg ? [
         "extracted" => true
+      ] : []) + ($plistType ? [
+        "plist_type" => $plistType
       ] : []);
     }
   }

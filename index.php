@@ -135,7 +135,9 @@ Flight::route("/@id/raw/*", function($id) {
       Flight::download("$cachePath.pngified", basename($cachePath) . ".png");
       return;
     }
-    if ($xml && file_get_contents($cachePath, length: 6) == "bplist") {
+
+    $plistType = identifyPlist($cachePath);
+    if ($xml && $plistType == "binary") {
       if (!is_file("$cachePath.xmlified")) {
         $plist = new CFPropertyList($cachePath);
         $plist->saveXML("$cachePath.xmlified", true);
@@ -144,7 +146,7 @@ Flight::route("/@id/raw/*", function($id) {
       Flight::download("$cachePath.xmlified", basename($cachePath));
       return;
     }
-    if ($json && (pathinfo($cachePath, PATHINFO_EXTENSION) == "plist" || str_contains(file_get_contents($cachePath), "!DOCTYPE plist") || file_get_contents($cachePath, length: 6) == "bplist")) {
+    if ($json && $plistType) {
       if (!is_file("$cachePath.jsonified")) {
         $plist = new CFPropertyList($cachePath);
         $array = $plist->toArray();
@@ -156,6 +158,7 @@ Flight::route("/@id/raw/*", function($id) {
       Flight::download("$cachePath.jsonified", basename($cachePath) . ".json");
       return;
     }
+
     if (is_file("$cachePath.original")) {
       /** @disregard */
       Flight::download("$cachePath.original", basename($cachePath));
