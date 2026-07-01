@@ -30,6 +30,15 @@ function pathNeedsDmgExtraction($path, $allowDmgAsLastPathLevel = false, $allowE
   return $dmgPath;
 }
 
+function convertDataToStrings(&$array) {
+  foreach ($array as $key => $value) {
+    if (is_array($value))
+      convertDataToStrings($array[$key]);
+    elseif (is_string($value) && !mb_check_encoding($value, "UTF-8"))
+      $array[$key] = base64_encode($value);
+  }
+}
+
 function identifyImg($path) {
   if (!is_file($path)) return false;  
 
