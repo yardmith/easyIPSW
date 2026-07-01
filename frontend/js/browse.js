@@ -158,12 +158,6 @@ window.onload = () => {
     if (path.at(0) != "/")
       path = "/" + path;
 
-    browsePath = path;
-    listingFilesView.replaceChildren(listingPathText);
-    listingPathText.classList.remove("invisible");
-    listingPathText.innerHTML = browsePath.replaceAll("/", "<wbr>/");
-    history.pushState({"path": path}, "", removeTrailingSlash(`${window.location.origin}/${ipswId}/browse${path}`));
-
     let dmgToExtract = pathNeedsDmgExtraction(path);
     if (dmgToExtract && !extractingDmg) {
       extractingDmg = dmgToExtract;
@@ -173,6 +167,12 @@ window.onload = () => {
       extractingBarFill.style.width = "0%";
       listingPathText.innerHTML += LISTING_PATH_EXTRACTING_TEXT;
     }
+
+    browsePath = path;
+    listingFilesView.replaceChildren(listingPathText, listingSearchBar);
+    listingPathText.classList.remove("invisible");
+    listingPathText.innerHTML = browsePath.replaceAll("/", "<wbr>/");
+    if (pushState) history.pushState({"path": path}, "", removeTrailingSlash(`${window.location.origin}/${ipswId}/browse${path}`));
 
     sendCommand("listing", {"location": path});
   }
