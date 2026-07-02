@@ -55,9 +55,10 @@
       </div>
     </div>
 
-    <div class="h-1/2 w-full sm:h-full sm:w-1/4 sm:max-w-100 sm:min-w-60 bg-slate-100 dark:bg-zinc-800 border-b-1 sm:border-1 border-solid border-slate-300 dark:border-zinc-700 sm:ml-2 sm:mr-2 sm:rounded-4xl sm:shadow-xl/3 dark:shadow-none overflow-hidden">
-      <div id="listing-files-view" class="w-full h-full flex flex-col p-4 overflow-y-auto scrollbar-thin">
-        <div id="listing-path" class="text-slate-600 text-sm ml-2 dark:text-zinc-400 mb-2 whitespace-nowrap invisible">/path</div>
+    <div class="flex flex-col gap-2 p-4 h-1/2 w-full sm:h-full sm:w-1/4 sm:max-w-100 sm:min-w-60 bg-slate-100 dark:bg-zinc-800 border-b-1 sm:border-1 border-solid border-slate-300 dark:border-zinc-700 sm:ml-2 sm:mr-2 sm:rounded-4xl sm:shadow-xl/3 dark:shadow-none overflow-hidden">
+      <div id="listing-path" class="text-slate-600 text-sm ml-2 dark:text-zinc-400 whitespace-nowrap invisible">/path</div>
+      
+      <div id="listing-files-view" class="w-full h-full flex flex-col overflow-y-auto scrollbar-thin">
         <div id="listing-file-template" class="select-none group/file p-3 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-xl transition cursor-pointer flex flex-row gap-2 items-center hidden">
           <img data-field="icon" src="/assets/file.svg" alt="File" class="min-w-5 h-5 dark:invert object-contain">
           <div class="flex flex-row items-baseline grow min-w-0">

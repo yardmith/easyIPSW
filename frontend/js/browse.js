@@ -171,7 +171,7 @@ window.onload = () => {
     }
 
     browsePath = removeTrailingSlash(path);
-    listingFilesView.replaceChildren(listingPathText, listingSearchBar);
+    listingFilesView.replaceChildren();
     listingPathText.classList.remove("invisible");
     listingPathText.innerHTML = browsePath == "" ? "/" : browsePath.replaceAll("/", "<wbr>/");
     if (pushState) history.pushState({"path": path}, "", removeTrailingSlash(`${window.location.origin}/${ipswId}/browse${path}`));
