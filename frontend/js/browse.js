@@ -1,9 +1,9 @@
-let browsePath = "/" + window.location.pathname.split("/").slice(3).join("/");
 let heartbeat;
 let initializing = true;
 let selectedFile;
 let selectedFileParentPath;
 let extractingDmg = false;
+let decryptingDmg = false;
 let disconnected = false;
 let extractedDmgs = [];
 let dmgInfo = [];
@@ -64,6 +64,8 @@ function getIconNameForFile(filename, tag = null) {
 }
 
 window.onload = () => {
+  let browsePath = removeTrailingSlash("/" + window.location.pathname.split("/").slice(3).join("/"));
+
   const initPage = document.getElementById("init-page");
   const initBar = document.getElementById("init-progress-bar");
   const initBarFill = document.getElementById("init-progress-bar-fill");
@@ -168,10 +170,10 @@ window.onload = () => {
       listingPathText.innerHTML += LISTING_PATH_EXTRACTING_TEXT;
     }
 
-    browsePath = path;
+    browsePath = removeTrailingSlash(path);
     listingFilesView.replaceChildren(listingPathText, listingSearchBar);
     listingPathText.classList.remove("invisible");
-    listingPathText.innerHTML = browsePath.replaceAll("/", "<wbr>/");
+    listingPathText.innerHTML = browsePath == "" ? "/" : browsePath.replaceAll("/", "<wbr>/");
     if (pushState) history.pushState({"path": path}, "", removeTrailingSlash(`${window.location.origin}/${ipswId}/browse${path}`));
 
     sendCommand("listing", {"location": path});
@@ -250,6 +252,11 @@ window.onload = () => {
         extractingDmg = false;
         extractingStatus.innerText = "Done";
         extractingBarFill.style.width = "100%";
+
+        if (decryptingDmg) {
+          window.location.href = decryptingDmg;
+          decryptingDmg = false;
+        }
       } else if (data.status == "error") {
         extractingStatus.innerText = `Error: ${data.message}`;
         extractingBar.classList.add("hidden");
@@ -384,7 +391,6 @@ window.onload = () => {
           contextMenuDownloadRaw.onclick = dismissContextMenu;
           contextMenuDownloadXml.onclick = dismissContextMenu;
           contextMenuDownloadJson.onclick = dismissContextMenu;
-          contextMenuDownloadDecrypted.onclick = dismissContextMenu;
 
           if (extension == "png") {
             contextMenuDownload.href = getRawUrl(filename) + "?defry";
@@ -404,7 +410,22 @@ window.onload = () => {
           }
 
           if (info.has_key === true) {
-            contextMenuDownloadDecrypted.href = getRawUrl(filename) + "?decrypt";
+            contextMenuDownloadDecrypted.onclick = () => {
+              if (DIR_LIKE_FILES.includes(extension)) {
+                extractingDmg = filename;
+                decryptingDmg = getRawUrl(filename) + "?decrypt";
+                setInfoViewFileStats(filename, dmgInfo[filename].size, dmgInfo[filename].tag);
+                changeInfoView(infoViewExtracting);
+                extractingStatus.innerText = "Waiting...";
+                extractingBarFill.style.width = "0%";
+                
+                sendCommand("decryptdmg", {"path": `${browsePath}/${filename}`});
+              } else {
+                window.location.href = getRawUrl(filename) + "?decrypt";
+              }
+
+              dismissContextMenu();
+            };
             contextMenuDownloadDecrypted.classList.remove("hidden");
           } else {
             contextMenuDownloadDecrypted.classList.add("hidden");

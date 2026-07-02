@@ -127,6 +127,11 @@ function decryptRootFsDmg($path, LoopInterface $loop) {
   }
 
   $loop->futureTick(function() use ($path, $job) {
+    if (is_file("$path.decrypted")) {
+      removeJob($job);
+      return;
+    }
+
     $keys = getKeyFromPath($path);
     if (!$keys) {
       removeJob($job, "No decryption key for this file was found", ["code" => 404]);
@@ -175,6 +180,11 @@ function decryptAea($path, LoopInterface $loop) {
   }
 
   $loop->futureTick(function() use ($path, $job) {
+    if (is_file("$path.decrypted")) {
+      removeJob($job);
+      return;
+    }
+
     rename($path, "$path.original");
 
     $process = new Process(AEA_UTILS_DIR . ".venv/bin/python3 " . AEA_UTILS_DIR . "extract_aea.py " . escapeshellarg("$path.original") . " " . escapeshellarg("$path.decrypted"));
@@ -271,7 +281,7 @@ function extractDmg($path, LoopInterface $loop) {
       $isRootFs = file_get_contents("$path.original", length: 8) == "encrcdsa";
     $isAea = pathinfo($path, PATHINFO_EXTENSION) == "aea";
 
-    if (is_file("$path.decrypted")) {
+    if (is_file("$path.decrypted") && !$isRootFs && !$isAea) {
       $extract(1);
     } elseif (identifyImg($path) !== false) {
       if (decryptImg($path) === false) {

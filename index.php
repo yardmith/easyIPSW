@@ -63,11 +63,11 @@ Flight::route("/@id/raw/*", function($id) {
     }
     if ($decrypt) {
       $extension = pathinfo($cachePath, PATHINFO_EXTENSION);
+      $actualPath = is_file("$cachePath.original") ? "$cachePath.original" : $cachePath;
+      $isRootFs = file_get_contents($actualPath, length: 8) == "encrcdsa";
+      $isAea = $extension == "aea";
 
-      if (!is_file("$cachePath.decrypted") && !is_dir($cachePath)) {
-        $isRootFs = file_get_contents($cachePath, length: 8) == "encrcdsa";
-        $isAea = $extension == "aea";
-
+      if (!is_dir($cachePath)) {
         if (identifyImg($cachePath)) {
           $result = decryptImg($cachePath);
           if ($result === null) {
@@ -93,7 +93,7 @@ Flight::route("/@id/raw/*", function($id) {
         }
       }
 
-      if (is_file("$cachePath.decrypted")) {
+      if (is_file("$cachePath.decrypted") && !$isRootFs && !$isAea) {
         /** @disregard */
         Flight::download("$cachePath.decrypted", basename($cachePath));
         return;

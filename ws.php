@@ -64,6 +64,11 @@ class IpswWs implements MessageComponentInterface {
     $ipswId = $this->clients[$from];
     $cachePath = CACHE_DIR . "/$ipswId";
 
+    if (!ipswIsCached($ipswId) && $command != "cache") {
+      $this->sendStatus($from, "error", "This IPSW ($ipswId) is not cached, use the `cache` command first");
+      return;
+    }
+
     switch ($command) {
       case "cache":
         if (!$this->setHasJob($from)) return;
@@ -77,11 +82,6 @@ class IpswWs implements MessageComponentInterface {
         break;
       
       case "listing":
-        if (!ipswIsCached($ipswId)) {
-          $this->sendStatus($from, "error", "This IPSW ($ipswId) is not cached, use the `cache` command first");
-          return;
-        }
-
         $location = $msg["location"] ?? "/";
         if (substr($location, 0, 1) != "/") {
           $location = "/$location";
@@ -115,7 +115,7 @@ class IpswWs implements MessageComponentInterface {
         break;
       
       case "dmginfo":
-        $dmgPath = pathNeedsDmgExtraction("$cachePath" . $msg["path"], true, true);
+        $dmgPath = pathNeedsDmgExtraction($cachePath . $msg["path"], true, true);
         $actualPath = $dmgPath;
         if (is_file("$dmgPath.original")) $actualPath = "$dmgPath.original";
 
@@ -131,6 +131,41 @@ class IpswWs implements MessageComponentInterface {
         }
         
         $this->sendStatus($from, "dmginfo", extra_fields: ["path" => $msg["path"], "extracted" => !pathNeedsDmgExtraction($dmgPath, true), "tag" => getFileTags($ipswId)[basename($dmgPath)], "size" => filesize($actualPath)]);
+        break;
+
+      case "decryptdmg":
+        if (!$this->setHasJob($from)) return;
+
+        $dmgPath = $cachePath . $msg["path"];
+        $actualPath = $dmgPath;
+        if (is_file("$dmgPath.original")) $actualPath = "$dmgPath.original";
+
+        if (!isset($msg["path"])) {
+          $this->sendStatus($from, "error", "No path specified");
+          return;
+        } elseif (!str_contains($msg["path"], ".dmg")) {
+          $this->sendStatus($from, "error", "The path specified is not a DMG");
+          return;
+        } elseif (!file_exists($actualPath)) {
+          $this->sendStatus($from, "error", "The path specified was not found");
+          return;
+        }
+
+        if (file_get_contents($actualPath, length: 8) == "encrcdsa")
+          $job = decryptRootFsDmg($dmgPath, $this->loop);
+        elseif (pathinfo($dmgPath, PATHINFO_EXTENSION) == "aea")
+          $job = decryptAea($actualPath, $this->loop);
+        else {
+          $this->setHasJob($from, "done");
+          $this->sendStatus($from, "done");
+          return;
+        }
+
+        subscribeToJobAsync($job, function($status, $data) use ($from) {
+          $this->setHasJob($from, $status);
+          $this->sendStatus($from, $status, extra_fields: $data);
+        }, $this->loop);
+
         break;
       
       case "ping":
