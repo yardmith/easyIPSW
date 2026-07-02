@@ -166,8 +166,8 @@ Everything else will be handled by your web server (i.e. NGINX).
 This project makes use of numerous command-line utilities for decrypting/extracting various proprietary formats, which are included as compiled binaries inside this repo. These include:
 
 - Several tools found within [XPwn](https://github.com/planetbeing/xpwn), created by [planetbeing](https://github.com/planetbeing):
-  - `xpwntool`, for decrypting/extracting IMG2 and IMG3 files
-  - `imagetool`, for converting older iBoot images to PNGs (fixed by [LukeZGD](https://github.com/LukeZGD))
+  - `xpwntool`, for decrypting/extracting IMG2 and IMG3 files (fixed by [LukeZGD](https://github.com/LukeZGD))
+  - `imagetool`, for converting older iBoot images to PNGs (also fixed by LukeZGD)
   - `dmg`, for decrypting root filesystem DMGs
 - [`ibootim`](https://github.com/realnp/ibootim), for converting newer iBoot images to PNGs, created by [npupyshev](https://github.com/realnp)
 - [`img4lib`](https://github.com/xerub/img4lib), for decrypting/extracting IMG4 files, created by [xerub](https://github.com/xerub)
