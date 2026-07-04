@@ -483,13 +483,13 @@ function getDirListing($path, $ipswId = null) {
     $isDmg = in_array(pathinfo($name, PATHINFO_EXTENSION), ["dmg", "aea"]);
 
     if (is_dir("$path/$name") && !$isDmg) {
-      array_push($files, [
-        "name" => $name
-      ] + ($pathList ? [
-        "path" => getRelativePath($path)
-      ] : []) + [
-        "is_dir" => true
-      ]);
+      $entry = [];
+
+      $entry["name"] = $name;
+      if ($pathList) $entry["path"] = getRelativePath($path);
+      $entry["is_dir"] = true;
+
+      array_push($files, $entry);
     } else {
       $filePath = "$path/$name";
       $actualPath = $filePath;
@@ -497,21 +497,17 @@ function getDirListing($path, $ipswId = null) {
 
       $plistType = identifyPlist($actualPath);
 
-      array_push($files, [
-        "name" => $name
-      ] + ($pathList ? [
-        "path" => getRelativePath($path)
-      ] : []) + [
-        "size" => filesize($actualPath)
-      ] + (array_key_exists($name, $tags) ? [
-        "tag" => $tags[$name]
-      ] : []) + (identifyImg($actualPath) || file_get_contents($actualPath, length: 8) == "encrcdsa" ? [
-        "has_key" => (bool)getKeyFromPath($filePath)
-      ] : []) + ($isDmg ? [
-        "extracted" => isDmgExtracted($filePath)
-      ] : []) + ($plistType ? [
-        "plist_type" => $plistType
-      ] : []));
+      $entry = [];
+
+      $entry["name"] = $name;
+      if ($pathList) $entry["path"] = getRelativePath($path);
+      $entry["size"] = filesize($actualPath);
+      if (array_key_exists($name, $tags)) $entry["tag"] = $tags[$name];
+      if (identifyImg($actualPath) || file_get_contents($actualPath, length: 8) == "encrcdsa") $entry["has_key"] = (bool)getKeyFromPath($filePath);
+      if ($isDmg) $entry["extracted"] = isDmgExtracted($filePath);
+      if ($plistType) $entry["plist_type"] = $plistType;
+
+      array_push($files, $entry);
     }
   }
 
