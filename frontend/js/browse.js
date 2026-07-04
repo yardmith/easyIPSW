@@ -291,6 +291,9 @@ window.onload = () => {
 
         percent = Math.round(percent);
         extractingBarFill.style.width = `${percent}%`;
+      } else if (data.status == "finalizing") {
+        extractingStatus.innerText = "Finalizing...";
+        extractingBarFill.style.width = "99%";
       }
     }
 

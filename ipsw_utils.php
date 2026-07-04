@@ -264,6 +264,7 @@ function extractDmg($path, LoopInterface $loop) {
     });
 
     $process->on("exit", function() use ($path, $job, $totalSteps) {
+      publishJobProgress($job, "finalizing");
       $process = new Process("find " . escapeshellarg($path) . " -print0 | xargs -0 -P 0 -n 100 chown :" . escapeshellarg(SHARED_OWNERSHIP_GROUP));
       $process->start();
       $process->on("exit", function() use ($job, $path, $totalSteps) {
