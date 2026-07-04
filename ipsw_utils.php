@@ -446,7 +446,7 @@ function getRelativePath($path) {
   return str_replace($cachePath, "", $path);
 }
 
-function getDirListing($path, $ipswId = null, $includeTags = true) {
+function getDirListing($path, $ipswId = null) {
   if (!$ipswId && is_array($path))
     return false;
 
@@ -462,6 +462,7 @@ function getDirListing($path, $ipswId = null, $includeTags = true) {
   else
     $listing = array_values(array_diff(scandir($path), [".", ".."]));
   $files = [];
+  $tags = getFileTags($ipswId);
 
   for ($i = 0; $i < count($listing); $i++) {
     $name = $listing[$i];
@@ -501,20 +502,15 @@ function getDirListing($path, $ipswId = null, $includeTags = true) {
         "path" => getRelativePath($path)
       ] : []) + [
         "size" => filesize($actualPath)
-      ] + (identifyImg($actualPath) || file_get_contents($actualPath, length: 8) == "encrcdsa" ? [
+      ] + (array_key_exists($name, $tags) ? [
+        "tag" => $tags[$name]
+      ] : []) + (identifyImg($actualPath) || file_get_contents($actualPath, length: 8) == "encrcdsa" ? [
         "has_key" => (bool)getKeyFromPath($filePath)
       ] : []) + ($isDmg ? [
         "extracted" => isDmgExtracted($filePath)
       ] : []) + ($plistType ? [
         "plist_type" => $plistType
       ] : []));
-    }
-  }
-
-  if ($includeTags) {
-    $tags = getFileTags($ipswId);
-    foreach ($tags as $filename => $tag) {
-      if (array_key_exists($filename, $files)) $files[$filename]["tag"] = $tag;
     }
   }
 
