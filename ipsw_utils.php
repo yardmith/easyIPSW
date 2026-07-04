@@ -439,17 +439,36 @@ function getFileTags($ipswId) {
   return $tags;
 }
 
-function getDirListing($path, $includeTags = true) {
-  if (!$ipswId = getIpswIdFromPath($path)) {
+function getRelativePath($path) {
+  if (!$ipswId = getIpswIdFromPath($path)) return;  
+  $cachePath = CACHE_DIR . "/$ipswId";
+
+  return str_replace($cachePath, "", $path);
+}
+
+function getDirListing($path, $ipswId = null, $includeTags = true) {
+  if (!$ipswId && is_array($path))
+    return false;
+
+  if (!$ipswId && !$ipswId = getIpswIdFromPath($path)) {
     return false;
   }
   updateExpireTimestamp($ipswId);
-  
-  $listing = array_values(array_diff(scandir($path), [".", ".."]));
+
+  $pathList = is_array($path) ? $path : false;
+
+  if ($pathList !== false)
+    $listing = $pathList;
+  else
+    $listing = array_values(array_diff(scandir($path), [".", ".."]));
   $files = [];
 
   for ($i = 0; $i < count($listing); $i++) {
     $name = $listing[$i];
+    if ($pathList) {
+      $path = dirname($name);
+      $name = basename($name);
+    }
 
     //if (in_array($name, [".HFS+ Private Directory Data", ".HFS+ Private Directory Data\r", ".Trashes", "[HFS+ Private Data]"])) continue;
     $originalName = str_replace(".original", "", $name);
@@ -462,15 +481,25 @@ function getDirListing($path, $includeTags = true) {
     $isDmg = in_array(pathinfo($name, PATHINFO_EXTENSION), ["dmg", "aea"]);
 
     if (is_dir("$path/$name") && !$isDmg) {
-      $files[$name] = ["is_dir" => true];
+      array_push($files, [
+        "name" => $name
+      ] + ($pathList ? [
+        "path" => getRelativePath($path)
+      ] : []) + [
+        "is_dir" => true
+      ]);
     } else {
       $filePath = "$path/$name";
       $actualPath = $filePath;
-      if (is_file("$path/$name.original")) $actualPath .= ".original";
+      if (is_file("$filePath.original")) $actualPath .= ".original";
 
       $plistType = identifyPlist($actualPath);
 
-      $files[$name] = [
+      array_push($files, [
+        "name" => $name
+      ] + ($pathList ? [
+        "path" => getRelativePath($path)
+      ] : []) + [
         "size" => filesize($actualPath)
       ] + (identifyImg($actualPath) || file_get_contents($actualPath, length: 8) == "encrcdsa" ? [
         "has_key" => (bool)getKeyFromPath($filePath)
@@ -478,7 +507,7 @@ function getDirListing($path, $includeTags = true) {
         "extracted" => isDmgExtracted($filePath)
       ] : []) + ($plistType ? [
         "plist_type" => $plistType
-      ] : []);
+      ] : []));
     }
   }
 

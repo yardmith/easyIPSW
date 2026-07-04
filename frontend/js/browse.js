@@ -7,6 +7,7 @@ let decryptingDmg = false;
 let disconnected = false;
 let extractedDmgs = [];
 let dmgInfo = [];
+let listingElements = [];
 
 function bytesToUnitsString(bytes) {
   if (!bytes && bytes !== 0) return "Unknown";
@@ -71,6 +72,8 @@ window.onload = () => {
 
   const listingPage = document.getElementById("listing-page");
   const listingPathText = document.getElementById("listing-path");
+  const listingSearchBox = document.getElementById("listing-search-box");
+  const listingSearchStatus = document.getElementById("listing-search-status");
   const listingFilesView = document.getElementById("listing-files-view");
   const listingFileTemplate = document.getElementById("listing-file-template");
   listingFileTemplate.remove();
@@ -170,9 +173,11 @@ window.onload = () => {
     }
 
     browsePath = removeTrailingSlash(path);
+    listingElements.length = 0;
     listingFilesView.replaceChildren();
     listingPathText.classList.remove("invisible");
     listingPathText.innerHTML = browsePath == "" ? "/" : browsePath.replaceAll("/", "<wbr>/");
+    listingSearchBox.value = "";
     if (pushState) history.pushState({"path": path}, "", removeTrailingSlash(`${window.location.origin}/${ipswId}/browse${path}`));
 
     sendCommand("listing", {"location": path});
@@ -289,20 +294,23 @@ window.onload = () => {
       }
     }
 
-    if (data.status == "listing") {
+    if (["listing", "results"].includes(data.status)) {
+      const isSearchResults = data.status == "results";
+
       listingPathText.innerHTML = listingPathText.innerHTML.replaceAll(LISTING_PATH_EXTRACTING_TEXT, "");
 
-      let listing = Object.entries(data.listing);
+      let listing = data[data.status];
+      if (isSearchResults) listing = listing.sort((a, b) => a.name.length - b.name.length);
       let lastDirPos = -1;
       listing.forEach((file, index) => {
-        if (file[1].is_dir) {
+        if (file.is_dir) {
           lastDirPos++;
           listing.splice(index, 1);
           listing.splice(lastDirPos, 0, file);
         }
       });
 
-      if (browsePath.split("/")[1] != "") {
+      if (browsePath != "" && browsePath != "/" && !isSearchResults) {
         let parentEntry = listingFileTemplate.cloneNode(true);
 
         parentEntry.querySelector('[data-field="filename"]').innerText = "Parent directory";
@@ -317,9 +325,13 @@ window.onload = () => {
 
         parentEntry.classList.remove("hidden");
         listingFilesView.appendChild(parentEntry);
+        listingElements.push(parentEntry);
       }
 
-      for (const [filename, info] of listing) {
+      for (let i = 0; i < listing.length; i++) {
+        const info = listing[i];
+        const filename = info.name;
+        let path = "path" in info ? info.path : browsePath;
         let clone = listingFileTemplate.cloneNode(true);
         clone.querySelector('[data-field="filename"]').innerText = filename;
 
@@ -350,7 +362,7 @@ window.onload = () => {
           clone.querySelector('[data-field="icon"]').alt = icon;
         }
 
-        let targetPath = removeTrailingSlash(browsePath) + "/" + filename;
+        let targetPath = removeTrailingSlash(path) + "/" + filename;
         clone.onclick = () => {
           let is_dir_like = DIR_LIKE_FILES.includes(extension);
 
@@ -380,22 +392,23 @@ window.onload = () => {
             };
           }
 
-          contextMenuDownload.href = getRawUrl(filename);
+          const rawUrl = getRawUrl(filename, path);
+          contextMenuDownload.href = rawUrl;
           contextMenuDownload.onclick = dismissContextMenu;
           contextMenuDownloadRaw.onclick = dismissContextMenu;
           contextMenuDownloadXml.onclick = dismissContextMenu;
           contextMenuDownloadJson.onclick = dismissContextMenu;
 
           if (extension == "png") {
-            contextMenuDownload.href = getRawUrl(filename) + "?defry";
+            contextMenuDownload.href = rawUrl + "?defry";
             contextMenuDownloadRaw.classList.remove("hidden");
-            contextMenuDownloadRaw.href = getRawUrl(filename);
+            contextMenuDownloadRaw.href = rawUrl;
           } else if (info.plist_type) {
             if (info.plist_type != "xml") {
-              contextMenuDownloadXml.href = getRawUrl(filename) + "?xml";
+              contextMenuDownloadXml.href = rawUrl + "?xml";
               contextMenuDownloadXml.classList.remove("hidden");
             }
-            contextMenuDownloadJson.href = getRawUrl(filename) + "?json";
+            contextMenuDownloadJson.href = rawUrl + "?json";
             contextMenuDownloadJson.classList.remove("hidden");
           } else {
             contextMenuDownloadRaw.classList.add("hidden");
@@ -407,15 +420,15 @@ window.onload = () => {
             contextMenuDownloadDecrypted.onclick = () => {
               if (DIR_LIKE_FILES.includes(extension)) {
                 extractingDmg = filename;
-                decryptingDmg = getRawUrl(filename) + "?decrypt";
+                decryptingDmg = rawUrl + "?decrypt";
                 setInfoViewFileStats(filename, dmgInfo[filename].size, dmgInfo[filename].tag);
                 changeInfoView(infoViewExtracting);
                 extractingStatus.innerText = "Waiting...";
                 extractingBarFill.style.width = "0%";
                 
-                sendCommand("decryptdmg", {"path": `${browsePath}/${filename}`});
+                sendCommand("decryptdmg", {"path": `${path}/${filename}`});
               } else {
-                window.location.href = getRawUrl(filename) + "?decrypt";
+                window.location.href = rawUrl + "?decrypt";
               }
 
               dismissContextMenu();
@@ -473,6 +486,15 @@ window.onload = () => {
           };
         if (info.extracted && !extractedDmgs.includes(filename)) extractedDmgs.push(filename);
         listingFilesView.appendChild(clone);
+        if (!isSearchResults) listingElements.push(clone);
+      }
+
+      listingSearchBox.disabled = false;
+      if (isSearchResults && listing.length == 0) {
+        listingSearchStatus.classList.remove("hidden");
+        listingSearchStatus.innerText = SEARCH_STATUS_NO_RESULTS;
+      } else {
+        listingSearchStatus.classList.add("hidden");
       }
     } else if (data.status == "dmginfo") {
       let filename = pathNeedsDmgExtraction(data.path);
@@ -520,5 +542,25 @@ window.onload = () => {
 
   document.onclick = (event) => {
     if (!contextMenu.contains(event.target)) dismissContextMenu();
+  };
+
+  listingSearchBox.onchange = (event) => {
+    const query = event.target.value.trim();
+
+    if (query == "") {
+      listingSearchStatus.classList.add("hidden");
+      listingFilesView.replaceChildren(...listingElements);
+      return;
+    }
+
+    listingFilesView.replaceChildren();
+    listingSearchStatus.classList.remove("hidden");
+    listingSearchStatus.innerText = SEARCH_STATUS_SEARCHING;
+    listingSearchBox.disabled = true;
+
+    sendCommand("search", {
+      "path": browsePath,
+      "query": query
+    });
   };
 };

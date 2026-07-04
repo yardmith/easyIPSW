@@ -12,6 +12,7 @@ use Ratchet\ConnectionInterface;
 use Ratchet\Http\HttpServer;
 use Ratchet\Server\IoServer;
 use Ratchet\WebSocket\WsServer;
+use React\ChildProcess\Process;
 use React\EventLoop\LoopInterface;
 
 class IpswWs implements MessageComponentInterface {
@@ -165,6 +166,33 @@ class IpswWs implements MessageComponentInterface {
           $this->setHasJob($from, $status);
           $this->sendStatus($from, $status, extra_fields: $data);
         }, $this->loop);
+
+        break;
+      
+      case "search":
+        $searchPath = "$cachePath/" . ltrim($msg["path"], "/");
+        $searchQuery = $msg["query"];
+
+        if (!isset($msg["path"]) || !isset($msg["query"])) {
+          $this->sendStatus($from, "error", "Path or query was not specified");
+          return;
+        } elseif (!is_dir($searchPath)) {
+          $this->sendStatus($from, "error", "Directory not found, make sure any DMGs in the path are extracted already");
+          return;
+        }
+
+        $process = new Process("find " . escapeshellarg($searchPath) . " -mindepth 1 -iname " . escapeshellarg("*$searchQuery*"));
+        $process->start();
+
+        $results = "";
+        $process->stdout->on("data", function($output) use (&$results) {
+          $results .= $output;
+        });
+
+        $process->on("exit", function() use (&$results, $from, $ipswId) {
+          $results = explode("\n", trim($results));
+          $this->sendStatus($from, "results", extra_fields: ["results" => $results[0] != "" ? getDirListing($results, $ipswId) : []]);
+        });
 
         break;
       
