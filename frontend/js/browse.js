@@ -216,6 +216,7 @@ window.onload = () => {
         initInitPage();
         initStatus.innerText = `Error: ${data.message}`;
         initBar.classList.add("hidden");
+        disconnected = true;
         ws.close();
       } else if (data.status == "downloading" || data.status == "extracting") {
         initInitPage();

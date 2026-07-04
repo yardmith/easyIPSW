@@ -203,8 +203,8 @@ Flight::route("/@id/browse/*", function($id) {
     $versionString = $ipswInfo["version_string"];
     $deviceName = $ipswInfo["device"]["name"];
   } else {
-    $versionString = "Unknown";
-    $deviceName = "Unknown";
+    Flight::notFound();
+    Flight::halt(404);
   }
 
   Flight::render("browse.html", [
@@ -216,6 +216,16 @@ Flight::route("/@id/browse/*", function($id) {
 });
 
 Flight::route("/@id/keys", function($id) {
+  $ipswInfo = getIpswInfo($id);
+
+  if ($ipswInfo) {
+    $versionString = $ipswInfo["version_string"];
+    $deviceName = $ipswInfo["device"]["name"];
+  } else {
+    Flight::notFound();
+    Flight::halt(404);
+  }
+
   $keys = [];
   $tags = getFileTags($id);
   foreach (getIpswKeys($id) as $filename =>  $key) {
@@ -226,16 +236,6 @@ Flight::route("/@id/keys", function($id) {
     array_push($keys, $info);
   }
   if (isset(Flight::request()->query->json)) Flight::jsonHalt(str_replace("    ", "  ", json_encode($keys, JSON_PRETTY_PRINT)), encode: false);
-
-  $ipswInfo = getIpswInfo($id);
-
-  if ($ipswInfo) {
-    $versionString = $ipswInfo["version_string"];
-    $deviceName = $ipswInfo["device"]["name"];
-  } else {
-    $versionString = "Unknown";
-    $deviceName = "Unknown";
-  }
 
   Flight::render("keys.html", [
     "url" => Flight::request()->getFullUrl(),
