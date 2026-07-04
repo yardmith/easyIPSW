@@ -94,9 +94,9 @@ class IpswWs implements MessageComponentInterface {
           return;
         }
         
-        if (is_dir($location) && pathinfo($location, PATHINFO_EXTENSION) != EXTRACTING_EXTENSION) {
+        if (is_dir($location) && (!$dmgToExtract || isDmgExtracted($dmgToExtract)) && pathinfo($location, PATHINFO_EXTENSION) != EXTRACTING_EXTENSION) {
           $this->sendStatus($from, "listing", null, ["listing" => getDirListing($location)]);
-        } elseif ($dmgToExtract && (is_file($dmgToExtract) || is_file("$dmgToExtract.decrypted"))) {
+        } elseif ($dmgToExtract) {
           if (!$this->setHasJob($from)) return;
 
           $job = extractDmg($dmgToExtract, $this->loop);
@@ -136,7 +136,7 @@ class IpswWs implements MessageComponentInterface {
       case "decryptdmg":
         if (!$this->setHasJob($from)) return;
 
-        $dmgPath = $cachePath . $msg["path"];
+        $dmgPath = "$cachePath/" . ltrim($msg["path"], "/");
         $actualPath = $dmgPath;
         if (is_file("$dmgPath.original")) $actualPath = "$dmgPath.original";
 

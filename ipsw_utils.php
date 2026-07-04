@@ -5,9 +5,15 @@ use React\ChildProcess\Process;
 use React\EventLoop\LoopInterface;
 use Symfony\Component\Filesystem\Path;
 
+require_once "vendor/autoload.php";
 require_once "db_utils.php";
 require_once "constants.php";
 require_once "job_utils.php";
+
+function isDmgExtracted($path) {
+  if (!$ipswId = getIpswIdFromPath($path)) return;
+  return is_dir($path) && !getOngoingJob($ipswId, "extractDmg", ["filename" => basename($path)]);
+}
 
 function pathNeedsDmgExtraction($path, $allowDmgAsLastPathLevel = false, $allowExtracted = false) {
   $path = rtrim($path, "/");
@@ -25,7 +31,7 @@ function pathNeedsDmgExtraction($path, $allowDmgAsLastPathLevel = false, $allowE
   }
 
   $dmgPath = implode("/", $pathParts);
-  if (is_dir($dmgPath) && !$allowExtracted) return false;
+  if (isDmgExtracted($path) && !$allowExtracted) return false;
   if ($dmgPath == $path && !$allowDmgAsLastPathLevel) return false;
   return $dmgPath;
 }
@@ -239,7 +245,7 @@ function extractDmg($path, LoopInterface $loop) {
       $actualPath = "$path.decrypted";
     }
 
-    $process = new Process(BIN_DIR . "7zz x -o" . escapeshellarg("$path.extracting") . " -y -bso2 -bse2 -bsp1 " . escapeshellarg($actualPath) . " 2> /dev/null");
+    $process = new Process(BIN_DIR . "7zz x -o" . escapeshellarg($path) . " -y -bso2 -bse2 -bsp1 " . escapeshellarg($actualPath) . " 2> /dev/null");
     $process->start();
     $prevPercent = null;
 
@@ -258,17 +264,29 @@ function extractDmg($path, LoopInterface $loop) {
     });
 
     $process->on("exit", function() use ($path, $job, $totalSteps) {
-      $process = new Process("find " . escapeshellarg("$path.extracting") . " -print0 | xargs -0 -P 0 -n 100 chown :" . escapeshellarg(SHARED_OWNERSHIP_GROUP));
+      $process = new Process("find " . escapeshellarg($path) . " -print0 | xargs -0 -P 0 -n 100 chown :" . escapeshellarg(SHARED_OWNERSHIP_GROUP));
       $process->start();
       $process->on("exit", function() use ($job, $path, $totalSteps) {
-        $process = new Process("find " . escapeshellarg("$path.extracting") . " -print0 | xargs -0 -P 0 -n 100 chmod 775");
+        $process = new Process("find " . escapeshellarg($path) . " -print0 | xargs -0 -P 0 -n 100 chmod 775");
         $process->start();
-        $process->on("exit", function() use ($job, $path, $totalSteps) {
-          rename("$path.extracting", $path);
+        $process->on("exit", function() use ($job, $totalSteps, $path) {
+          $remove = function() use ($job, $totalSteps) {
           removeJob($job, data: [
             "steps_done" => $totalSteps,
             "steps_total" => $totalSteps
           ]);
+          };
+
+          $children = array_values(array_diff(scandir($path), [".", ".."]));
+          if (count($children) == 1 && is_dir("$path/" . $children[0])) {
+            $childPath = "$path/" . $children[0];
+            $process = new Process("mv " . escapeshellarg("$childPath/") . "* " . escapeshellarg("$childPath/../") . " && rm -r " . escapeshellarg($childPath));
+            $process->start();
+            $process->stderr->on("data", function($output) {var_dump($output);});
+            $process->on("exit", $remove);
+          } else {
+            $remove();
+          }
         });
       });
     });
@@ -456,8 +474,8 @@ function getDirListing($path, $includeTags = true) {
         "size" => filesize($actualPath)
       ] + (identifyImg($actualPath) || file_get_contents($actualPath, length: 8) == "encrcdsa" ? [
         "has_key" => (bool)getKeyFromPath($filePath)
-      ] : []) + (is_dir("$path/$name") && $isDmg ? [
-        "extracted" => true
+      ] : []) + ($isDmg ? [
+        "extracted" => isDmgExtracted($filePath)
       ] : []) + ($plistType ? [
         "plist_type" => $plistType
       ] : []);

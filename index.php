@@ -67,30 +67,28 @@ Flight::route("/@id/raw/*", function($id) {
       $isRootFs = file_get_contents($actualPath, length: 8) == "encrcdsa";
       $isAea = $extension == "aea";
 
-      if (!is_dir($cachePath)) {
-        if (identifyImg($cachePath)) {
-          $result = decryptImg($cachePath);
-          if ($result === null) {
-            Flight::halt(404, "No decryption key for this file was found");
-          } elseif ($result === false) {
-            Flight::halt(500, "Failed to decrypt IMG");
-          }
-        } elseif ($isRootFs || $isAea) {
-          if ($isRootFs)
-            $decryptJob = decryptRootFsDmg($cachePath, Loop::get());
-          else
-            $decryptJob = decryptAea($cachePath, Loop::get());  
-
-          subscribeToJobAsync($decryptJob, function($status, $data) use ($cachePath) {
-            if ($status == "done") {
-              /** @disregard */
-              Flight::download("$cachePath.decrypted", basename($cachePath));
-            } elseif ($status == "error") {
-              Flight::halt(isset($data["code"]) ? $data["code"] : 500, $data["message"]);
-            }
-          });
-          return;
+      if (identifyImg($cachePath) && !is_dir($cachePath)) {
+        $result = decryptImg($cachePath);
+        if ($result === null) {
+          Flight::halt(404, "No decryption key for this file was found");
+        } elseif ($result === false) {
+          Flight::halt(500, "Failed to decrypt IMG");
         }
+      } elseif ($isRootFs || $isAea) {
+        if ($isRootFs)
+          $decryptJob = decryptRootFsDmg($cachePath, Loop::get());
+        else
+          $decryptJob = decryptAea($cachePath, Loop::get());  
+
+        subscribeToJobAsync($decryptJob, function($status, $data) use ($cachePath) {
+          if ($status == "done") {
+            /** @disregard */
+            Flight::download("$cachePath.decrypted", basename($cachePath));
+          } elseif ($status == "error") {
+            Flight::halt(isset($data["code"]) ? $data["code"] : 500, $data["message"]);
+          }
+        });
+        return;
       }
 
       if (is_file("$cachePath.decrypted") && !$isRootFs && !$isAea) {
