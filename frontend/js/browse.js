@@ -7,8 +7,6 @@ let decryptingDmg = false;
 let disconnected = false;
 let extractedDmgs = [];
 let dmgInfo = [];
-let contextMenuOpened = false;
-let isMouse = false;
 
 function bytesToUnitsString(bytes) {
   if (!bytes && bytes !== 0) return "Unknown";
@@ -99,6 +97,7 @@ window.onload = () => {
   const contextMenuDownloadJson = document.getElementById("context-menu-download-json");
   const contextMenuDownloadDecrypted = document.getElementById("context-menu-download-decrypted");
 
+  const isMouse = window.matchMedia("(pointer: fine)").matches;
   const ipswId = window.location.pathname.split("/")[1];
   const wsProtocol = window.location.protocol == "https:" ? "wss" : "ws";
   const ws = new WebSocket(`${wsProtocol}://${window.location.host}/${ipswId}/ws`);
@@ -367,11 +366,6 @@ window.onload = () => {
         };
 
         let openContextMenu = (event) => {
-          contextMenu.classList.remove("opacity-0");
-          contextMenu.classList.add("opacity-100", "visible");
-          contextMenu.style.left = `${event.clientX}px`;
-          contextMenu.style.top = `${event.clientY}px`;
-
           contextMenuFilename.innerText = filename;
 
           if (info.is_dir) {
@@ -430,10 +424,21 @@ window.onload = () => {
           } else {
             contextMenuDownloadDecrypted.classList.add("hidden");
           }
+
+          let newY = event.clientY;
+          let newX = event.clientX;
+          if (newY + contextMenu.offsetHeight > window.innerHeight) newY = window.innerHeight - contextMenu.offsetHeight;
+          if (newX + contextMenu.offsetWidth > window.innerWidth) newX = window.innerWidth - contextMenu.offsetWidth;
+
+          contextMenu.classList.remove("opacity-0");
+          contextMenu.classList.add("opacity-100", "visible");
+          contextMenu.style.left = `${newX}px`;
+          contextMenu.style.top = `${newY}px`;
         };
 
         clone.oncontextmenu = (event) => {
           event.preventDefault();
+          if (!isMouse) return;
           openContextMenu(event);
         };
 
@@ -442,7 +447,6 @@ window.onload = () => {
           if (isMouse) return;
           holdTimeout = setTimeout(() => {
             openContextMenu(event);
-            contextMenuOpened = true;
           }, MOBILE_CONTEXT_MENU_HOLD_SECONDS * 1000);
         };
         clone.onpointerup = () => {
@@ -517,8 +521,4 @@ window.onload = () => {
   document.onclick = (event) => {
     if (!contextMenu.contains(event.target)) dismissContextMenu();
   };
-
-  window.addEventListener("mousemove", () => {
-    isMouse = true;
-  }, {once: true});
 };
