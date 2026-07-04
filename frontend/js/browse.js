@@ -99,6 +99,7 @@ window.onload = () => {
   const contextMenuDownloadXml = document.getElementById("context-menu-download-xml");
   const contextMenuDownloadJson = document.getElementById("context-menu-download-json");
   const contextMenuDownloadDecrypted = document.getElementById("context-menu-download-decrypted");
+  const contextMenuDownloadPng = document.getElementById("context-menu-download-png");
 
   const isMouse = window.matchMedia("(pointer: fine)").matches;
   const ipswId = window.location.pathname.split("/")[1];
@@ -402,6 +403,7 @@ window.onload = () => {
           contextMenuDownloadRaw.onclick = dismissContextMenu;
           contextMenuDownloadXml.onclick = dismissContextMenu;
           contextMenuDownloadJson.onclick = dismissContextMenu;
+          contextMenuDownloadPng.onclick = dismissContextMenu;
 
           if (extension == "png") {
             contextMenuDownload.href = rawUrl + "?defry";
@@ -438,6 +440,13 @@ window.onload = () => {
               dismissContextMenu();
             };
             contextMenuDownloadDecrypted.classList.remove("hidden");
+
+            if (tag == "ibootim" || tag == "applelogo") {
+              contextMenuDownloadPng.href = rawUrl + "?png";
+              contextMenuDownloadPng.classList.remove("hidden");
+            } else {
+              contextMenuDownloadPng.classList.add("hidden");
+            }
           } else {
             contextMenuDownloadDecrypted.classList.add("hidden");
           }
