@@ -495,7 +495,7 @@ window.onload = () => {
       listingSearchBox.disabled = false;
       if (isSearchResults && listing.length == 0) {
         listingSearchStatus.classList.remove("hidden");
-        listingSearchStatus.innerText = SEARCH_STATUS_NO_RESULTS;
+        listingSearchStatus.innerText = "No results";
       } else {
         listingSearchStatus.classList.add("hidden");
       }
@@ -558,7 +558,7 @@ window.onload = () => {
 
     listingFilesView.replaceChildren();
     listingSearchStatus.classList.remove("hidden");
-    listingSearchStatus.innerText = SEARCH_STATUS_SEARCHING;
+    listingSearchStatus.innerText = "Searching...";
     listingSearchBox.disabled = true;
 
     sendCommand("search", {

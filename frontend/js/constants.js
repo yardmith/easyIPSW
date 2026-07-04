@@ -3,8 +3,6 @@ const HEARTBEAT_INTERVAL = 30000;
 const MOBILE_CONTEXT_MENU_HOLD_SECONDS = 0.5;
 
 const LISTING_PATH_EXTRACTING_TEXT = " - <wbr>Extracting...";
-const SEARCH_STATUS_NO_RESULTS = "No results";
-const SEARCH_STATUS_SEARCHING = "Searching...";
 
 const TAG_FRIENDLY_NAMES = {
   "applelogo": "Boot logo",
