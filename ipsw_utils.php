@@ -271,10 +271,10 @@ function extractDmg($path, LoopInterface $loop) {
         $process->start();
         $process->on("exit", function() use ($job, $totalSteps, $path) {
           $remove = function() use ($job, $totalSteps) {
-          removeJob($job, data: [
-            "steps_done" => $totalSteps,
-            "steps_total" => $totalSteps
-          ]);
+            removeJob($job, data: [
+              "steps_done" => $totalSteps,
+              "steps_total" => $totalSteps
+            ]);
           };
 
           $children = array_values(array_diff(scandir($path), [".", ".."]));
