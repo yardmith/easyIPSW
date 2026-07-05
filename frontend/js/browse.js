@@ -152,7 +152,9 @@ window.onload = () => {
     infoViewIcon.src = `${ASSETS_DIR}/${icon}.svg`;
     infoViewIcon.alt = icon;
 
-    infoViewDownloadLink.href = getRawUrl(filename);
+    infoViewDownloadLink.onclick = () => {
+      window.location.href = getRawUrl(filename);
+    };
 
     infoViewFileStats.classList.remove("hidden");
   }
@@ -413,24 +415,29 @@ window.onload = () => {
             };
           }
 
+          const download = (event) => {
+            window.location.href = event.target.getAttribute("data-url");
+            dismissContextMenu();
+          };
+
           const rawUrl = getRawUrl(filename, path);
-          contextMenuDownload.href = rawUrl;
-          contextMenuDownload.onclick = dismissContextMenu;
-          contextMenuDownloadRaw.onclick = dismissContextMenu;
-          contextMenuDownloadXml.onclick = dismissContextMenu;
-          contextMenuDownloadJson.onclick = dismissContextMenu;
-          contextMenuDownloadPng.onclick = dismissContextMenu;
+          contextMenuDownload.setAttribute("data-url", rawUrl);
+          contextMenuDownload.onclick = download;
+          contextMenuDownloadRaw.onclick = download;
+          contextMenuDownloadXml.onclick = download;
+          contextMenuDownloadJson.onclick = download;
+          contextMenuDownloadPng.onclick = download;
 
           if (extension == "png" && info.cgbi) {
-            contextMenuDownload.href = rawUrl + "?defry";
+            contextMenuDownload.setAttribute("data-url", rawUrl);
             contextMenuDownloadRaw.classList.remove("hidden");
-            contextMenuDownloadRaw.href = rawUrl;
+            contextMenuDownloadRaw.setAttribute("data-url", rawUrl);
           } else if (info.plist_type) {
             if (info.plist_type != "xml") {
-              contextMenuDownloadXml.href = rawUrl + "?xml";
+              contextMenuDownloadXml.setAttribute("data-url", rawUrl + "?xml");
               contextMenuDownloadXml.classList.remove("hidden");
             }
-            contextMenuDownloadJson.href = rawUrl + "?json";
+            contextMenuDownloadJson.setAttribute("data-url", rawUrl + "?json");
             contextMenuDownloadJson.classList.remove("hidden");
           } else {
             contextMenuDownloadRaw.classList.add("hidden");
@@ -450,7 +457,7 @@ window.onload = () => {
                 
                 sendCommand("decryptdmg", {"path": `${path}/${filename}`});
               } else {
-                window.location.href = rawUrl + "?decrypt";
+                window.location.setAttribute("data-url", rawUrl + "?decrypt");
               }
 
               dismissContextMenu();
@@ -458,7 +465,7 @@ window.onload = () => {
             contextMenuDownloadDecrypted.classList.remove("hidden");
 
             if (tag == "ibootim" || tag == "applelogo") {
-              contextMenuDownloadPng.href = rawUrl + "?png";
+              contextMenuDownloadPng.setAttribute("data-url", rawUrl + "?png");
               contextMenuDownloadPng.classList.remove("hidden");
             } else {
               contextMenuDownloadPng.classList.add("hidden");
