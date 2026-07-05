@@ -76,7 +76,9 @@ window.onload = () => {
   const listingSearchStatus = document.getElementById("listing-search-status");
   const listingFilesView = document.getElementById("listing-files-view");
   const listingFileTemplate = document.getElementById("listing-file-template");
+  const searchResultsPathTemplate = document.getElementById("search-results-path-template");
   listingFileTemplate.remove();
+  searchResultsPathTemplate.remove();
 
   const infoView = document.getElementById("listing-info-view");
   const infoViewFileStats = document.getElementById("info-view-file-stats");
@@ -305,7 +307,10 @@ window.onload = () => {
       listingPathText.innerHTML = listingPathText.innerHTML.replaceAll(LISTING_PATH_EXTRACTING_TEXT, "");
 
       let listing = data[data.status];
-      if (isSearchResults) listing = listing.sort((a, b) => a.name.length - b.name.length);
+      if (isSearchResults) {
+        listing = listing.sort((a, b) => a.name.length - b.name.length);
+        listing = listing.sort((a, b) => a.path.localeCompare(b.path));
+      }
       let lastDirPos = -1;
       listing.forEach((file, index) => {
         if (file.is_dir) {
@@ -333,12 +338,23 @@ window.onload = () => {
         listingElements.push(parentEntry);
       }
 
+      let lastPath = "";
       for (let i = 0; i < listing.length; i++) {
         const info = listing[i];
         const filename = info.name;
         let path = "path" in info ? info.path : browsePath;
         let clone = listingFileTemplate.cloneNode(true);
         clone.querySelector('[data-field="filename"]').innerText = filename;
+        
+        if (isSearchResults && info.path != lastPath) {
+          lastPath = info.path;
+
+          let pathClone = searchResultsPathTemplate.cloneNode(true);
+          pathClone.removeAttribute("id");
+          pathClone.innerHTML = info.path == "" ? "/" : info.path.replaceAll("/", "<wbr>/");
+          pathClone.classList.remove("hidden");
+          listingFilesView.appendChild(pathClone);
+        }
 
         let tag = null;
         if ("tag" in info) {
