@@ -74,6 +74,7 @@ window.onload = () => {
   const listingPathText = document.getElementById("listing-path");
   const listingSearchBox = document.getElementById("listing-search-box");
   const listingSearchStatus = document.getElementById("listing-search-status");
+  const listingSearchClearButton = document.getElementById("search-clear-button");
   const listingFilesView = document.getElementById("listing-files-view");
   const listingFileTemplate = document.getElementById("listing-file-template");
   const searchResultsPathTemplate = document.getElementById("search-results-path-template");
@@ -598,5 +599,19 @@ window.onload = () => {
       "path": browsePath,
       "query": query
     });
+  };
+  listingSearchBox.oninput = (event) => {
+    const text = event.target.value.trim();
+
+    if (text == "") {
+      listingSearchClearButton.classList.add("hidden");
+    } else {
+      listingSearchClearButton.classList.remove("hidden");
+    }
+  };
+  listingSearchClearButton.onclick = () => {
+    listingSearchBox.value = "";
+    listingSearchBox.dispatchEvent(new Event("change"));
+    listingSearchBox.dispatchEvent(new Event("input"));
   };
 };
