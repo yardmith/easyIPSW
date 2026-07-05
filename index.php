@@ -52,7 +52,7 @@ Flight::route("/@id/raw/*", function($id) {
     $xml = isset($query->xml);
     $json = isset($query->json);
 
-    if ($defry && pathinfo($cachePath, PATHINFO_EXTENSION) == "png") {
+    if ($defry && pathinfo($cachePath, PATHINFO_EXTENSION) == "png" && str_ends_with(file_get_contents($cachePath, length: 16), "CgBI")) {
       if (!is_file("$cachePath.defried")) {
         exec(BIN_DIR . "pngdefry -s .defried " . escapeshellarg($cachePath));
         rename(dirname($cachePath) . "/" . pathinfo($cachePath, PATHINFO_FILENAME) . ".defried.png", "$cachePath.defried");

@@ -405,7 +405,7 @@ window.onload = () => {
           contextMenuDownloadJson.onclick = dismissContextMenu;
           contextMenuDownloadPng.onclick = dismissContextMenu;
 
-          if (extension == "png") {
+          if (extension == "png" && info.cgbi) {
             contextMenuDownload.href = rawUrl + "?defry";
             contextMenuDownloadRaw.classList.remove("hidden");
             contextMenuDownloadRaw.href = rawUrl;

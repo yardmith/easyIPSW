@@ -506,6 +506,7 @@ function getDirListing($path, $ipswId = null) {
       if (identifyImg($actualPath) || file_get_contents($actualPath, length: 8) == "encrcdsa") $entry["has_key"] = (bool)getKeyFromPath($filePath);
       if ($isDmg) $entry["extracted"] = isDmgExtracted($filePath);
       if ($plistType) $entry["plist_type"] = $plistType;
+      if ($extension == "png") $entry["cgbi"] = str_ends_with(file_get_contents($actualPath, length: 16), "CgBI");
 
       array_push($files, $entry);
     }
