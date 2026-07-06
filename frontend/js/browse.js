@@ -342,6 +342,7 @@ window.onload = () => {
       }
 
       let lastPath = "";
+      let container = listingFilesView;
       for (let i = 0; i < listing.length; i++) {
         const info = listing[i];
         const filename = info.name;
@@ -351,12 +352,14 @@ window.onload = () => {
         
         if (isSearchResults && info.path != lastPath) {
           lastPath = info.path;
+          container = document.createElement("div");
+          listingFilesView.appendChild(container);
 
           let pathClone = searchResultsPathTemplate.cloneNode(true);
           pathClone.removeAttribute("id");
           pathClone.innerHTML = info.path == "" ? "/" : info.path.replaceAll("/", "<wbr>/");
           pathClone.classList.remove("hidden");
-          listingFilesView.appendChild(pathClone);
+          container.appendChild(pathClone);
         }
 
         let tag = null;
@@ -522,7 +525,7 @@ window.onload = () => {
             "tag": tag
           };
         if (info.extracted && !extractedDmgs.includes(filename)) extractedDmgs.push(filename);
-        listingFilesView.appendChild(clone);
+        container.appendChild(clone);
         if (!isSearchResults) listingElements.push(clone);
       }
 
