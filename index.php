@@ -166,7 +166,17 @@ Flight::route("/@id/raw/*", function($id) {
     }
 
     if (is_dir($cachePath)) {
-      Flight::halt(400, "Path ($path) is a directory");
+      $job = storeFolder($cachePath, Loop::get());
+      subscribeToJobAsync($job, function($status, $data) use ($cachePath) {
+        if ($status == "done") {
+          /** @disregard */
+          Flight::download("$cachePath.zipped", basename($cachePath) . ".zip");
+          return;
+        } elseif ($status == "error") {
+          exit($data["message"]);
+        }
+      });
+      return;
     } elseif (!is_file($cachePath) || in_array(pathinfo($cachePath, PATHINFO_EXTENSION), IGNORE_EXTENSIONS)) {
       Flight::halt(404, "File/directory not found");
     }

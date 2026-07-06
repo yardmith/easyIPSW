@@ -196,6 +196,27 @@ class IpswWs implements MessageComponentInterface {
 
         break;
       
+      case "storefolder":
+        if (!$this->setHasJob($from)) return;
+
+        $path = "$cachePath/" . ltrim($msg["path"], "/");
+
+        if (!isset($msg["path"])) {
+          $this->sendStatus($from, "error", "No path specified");
+          return;
+        } elseif (!file_exists($path)  || !getIpswIdFromPath($path)) {
+          $this->sendStatus($from, "error", "The path specified was not found");
+          return;
+        }
+
+        $job = storeFolder($path, $this->loop);
+        subscribeToJobAsync($job, function($status, $data) use ($from) {
+          $this->setHasJob($from, $status);
+          $this->sendStatus($from, $status, extra_fields: $data);
+        }, $this->loop);
+
+        break;
+      
       case "ping":
         $this->sendStatus($from, "pong");
         break;

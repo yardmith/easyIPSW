@@ -122,7 +122,7 @@ function decryptImg($path) {
 }
 
 function decryptRootFsDmg($path, LoopInterface $loop) {
-  $ipswId = getIpswIdFromPath($path);
+  if (!$ipswId = getIpswIdFromPath($path)) return false;
   updateExpireTimestamp($ipswId);
 
   $jobData = ["filename" => basename($path)];
@@ -175,7 +175,7 @@ function decryptRootFsDmg($path, LoopInterface $loop) {
 }
 
 function decryptAea($path, LoopInterface $loop) {
-  $ipswId = getIpswIdFromPath($path);
+  if (!$ipswId = getIpswIdFromPath($path)) return false;
   updateExpireTimestamp($ipswId);
 
   $jobData = ["filename" => basename($path)];
@@ -220,7 +220,7 @@ function decryptAea($path, LoopInterface $loop) {
 }
 
 function extractDmg($path, LoopInterface $loop) {
-  $ipswId = getIpswIdFromPath($path);
+  if (!$ipswId = getIpswIdFromPath($path)) return false;
   updateExpireTimestamp($ipswId);
 
   $jobData = ["filename" => basename($path)];
@@ -661,6 +661,50 @@ function cacheIpswContents($id, LoopInterface $loop) {
     });
 
     $process->on("exit", $extract);
+  });
+
+  return $job;
+}
+
+function storeFolder($path, LoopInterface $loop) {
+  $path = rtrim($path, "/");
+
+  if (!$ipswId = getIpswIdFromPath($path)) return false;
+  updateExpireTimestamp($ipswId);
+
+  $jobData = ["path" => $path];
+  $job = getOngoingJob($ipswId, "storeFolder", $jobData);
+  if ($job) {
+    return $job;
+  } else {
+    $job = addJob($ipswId, "storeFolder", $jobData);
+  }
+
+  $loop->futureTick(function() use ($job, $path) {
+    if (is_file("$path.zipped")) {
+      removeJob($job);
+      return;
+    }
+
+    $process = new Process(BIN_DIR . "7zz a -mx0 -mmt  -y -bso2 -bse2 -bsp1 " . escapeshellarg("$path.zipped") . " " . escapeshellarg("$path/*") . " 2> /dev/null");
+    $process->start();
+    $prevPercent = null;
+
+    $process->stdout->on("data", function($output) use ($job, &$prevPercent) {
+      if (!str_contains($output, "%")) return;
+      $percent = intval(explode("%", str_replace([hex2bin("08"), " "], "", $output))[0]);
+      if ($percent == $prevPercent) return;
+
+      publishJobProgress($job, "storing", [
+        "percent_completed" => $percent
+      ]);
+
+      $prevPercent = $percent;
+    });
+
+    $process->on("exit", function() use ($job) {
+      removeJob($job);
+    });
   });
 
   return $job;
