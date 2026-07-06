@@ -126,7 +126,7 @@ class IpswWs implements MessageComponentInterface {
         } elseif (!str_contains($msg["path"], ".dmg")) {
           $this->sendStatus($from, "error", "The path specified is not a DMG");
           return;
-        } elseif (!file_exists($actualPath)) {
+        } elseif (!file_exists($actualPath)  || !getIpswIdFromPath($dmgPath)) {
           $this->sendStatus($from, "error", "The path specified was not found");
           return;
         }
@@ -147,7 +147,7 @@ class IpswWs implements MessageComponentInterface {
         } elseif (!str_contains($msg["path"], ".dmg")) {
           $this->sendStatus($from, "error", "The path specified is not a DMG");
           return;
-        } elseif (!file_exists($actualPath)) {
+        } elseif (!file_exists($actualPath) || !getIpswIdFromPath($dmgPath)) {
           $this->sendStatus($from, "error", "The path specified was not found");
           return;
         }
@@ -176,7 +176,7 @@ class IpswWs implements MessageComponentInterface {
         if (!isset($msg["path"]) || !isset($msg["query"])) {
           $this->sendStatus($from, "error", "Path or query was not specified");
           return;
-        } elseif (!is_dir($searchPath)) {
+        } elseif (!is_dir($searchPath) || !getIpswIdFromPath($searchPath)) {
           $this->sendStatus($from, "error", "Directory not found, make sure any DMGs in the path are extracted already");
           return;
         }

@@ -71,11 +71,12 @@ function img2IsEncrypted($path) {
 
 function getIpswIdFromPath($path) {
   $path = Path::canonicalize($path);
+  if (!str_starts_with($path, CACHE_DIR . "/")) return false;
+
   $pathParts = explode("/", $path);
   $cacheIdx = array_search(CACHE_DIR_NAME, $pathParts);
-  if ($cacheIdx === false || count($pathParts) <= $cacheIdx + 1) {
-    return false;
-  }
+  if ($cacheIdx === false || count($pathParts) <= $cacheIdx + 1) return false;
+
   return $pathParts[$cacheIdx + 1];
 }
 
@@ -103,10 +104,10 @@ function decryptImg($path) {
       exec(BIN_DIR . "xpwntool $encPath $decPath", result_code: $result_code);
       break;
     case 3:
-      exec(BIN_DIR . "xpwntool $encPath $decPath -k " . $keys->key . " -iv " . $keys->iv, result_code: $result_code);
+      exec(BIN_DIR . "xpwntool $encPath $decPath -k " . escapeshellarg($keys->key) . " -iv " . escapeshellarg($keys->iv), result_code: $result_code);
       break;
     case 4:
-      exec(BIN_DIR . "img4 -i $encPath -o $decPath -k " . $keys->iv . $keys->key, result_code: $result_code);
+      exec(BIN_DIR . "img4 -i $encPath -o $decPath -k " . escapeshellarg($keys->iv . $keys->key), result_code: $result_code);
       break;
     default:
       return false;
@@ -145,7 +146,7 @@ function decryptRootFsDmg($path, LoopInterface $loop) {
     }
     rename($path, "$path.original");
 
-    $process = new Process(BIN_DIR . "dmg extract " . escapeshellarg("$path.original") . " " . escapeshellarg("$path.decrypted") . " -k " . $keys["key"]);
+    $process = new Process(BIN_DIR . "dmg extract " . escapeshellarg("$path.original") . " " . escapeshellarg("$path.decrypted") . " -k " . escapeshellarg($keys["key"]));
     $process->start();
     $prevOffset = 0;
     $fileSize = filesize("$path.original");
