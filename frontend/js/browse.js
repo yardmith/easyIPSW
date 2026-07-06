@@ -526,12 +526,16 @@ window.onload = () => {
         if (!isSearchResults) listingElements.push(clone);
       }
 
-      listingSearchBox.disabled = false;
-      if (isSearchResults && listing.length == 0) {
-        listingSearchStatus.classList.remove("hidden");
-        listingSearchStatus.innerText = "No results";
-      } else {
-        listingSearchStatus.classList.add("hidden");
+      if (isSearchResults) {
+        listingSearchBox.disabled = false;
+        listingSearchClearButton.classList.remove("hidden");
+
+        if (listing.length == 0) {
+          listingSearchStatus.classList.remove("hidden");
+          listingSearchStatus.innerText = "No results";
+        } else {
+          listingSearchStatus.classList.add("hidden");
+        }
       }
     } else if (data.status == "dmginfo") {
       let filename = pathNeedsDmgExtraction(data.path);
@@ -587,6 +591,7 @@ window.onload = () => {
     if (query == "") {
       listingSearchStatus.classList.add("hidden");
       listingFilesView.replaceChildren(...listingElements);
+      listingSearchClearButton.classList.add("hidden");
       return;
     }
 
@@ -600,18 +605,8 @@ window.onload = () => {
       "query": query
     });
   };
-  listingSearchBox.oninput = (event) => {
-    const text = event.target.value.trim();
-
-    if (text == "") {
-      listingSearchClearButton.classList.add("hidden");
-    } else {
-      listingSearchClearButton.classList.remove("hidden");
-    }
-  };
   listingSearchClearButton.onclick = () => {
     listingSearchBox.value = "";
     listingSearchBox.dispatchEvent(new Event("change"));
-    listingSearchBox.dispatchEvent(new Event("input"));
   };
 };
