@@ -48,7 +48,7 @@ function convertDataToStrings(&$array) {
 function identifyImg($path) {
   if (!is_file($path)) return false;  
 
-  $start = file_get_contents($path, length: 10);
+  $start = file_get_contents($path, length: 16);
 
   if (str_starts_with($start, "8900")) {
     return 2;
