@@ -438,7 +438,7 @@ window.onload = () => {
           }
 
           const download = (event) => {
-            window.location.href = event.target.getAttribute("data-url");
+            window.location.href = event.target.closest("button").getAttribute("data-url");
             dismissContextMenu();
           };
 
