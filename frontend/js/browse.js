@@ -93,6 +93,7 @@ window.onload = () => {
   const infoViewTag = getElem("info-view-stats-tag");
   const infoViewSize = getElem("info-view-stats-size");
   const infoViewDownloadLink = getElem("info-view-stats-download");
+  const infoViewDownloadOptions = getElem("info-view-stats-download-options");
   const infoViewStart = getElem("info-start");
   const infoViewExtracting = getElem("info-extracting");
   const extractingBar = getElem("extracting-progress-bar");
@@ -148,29 +149,6 @@ window.onload = () => {
     listingElement.classList.add("bg-slate-200", "dark:bg-zinc-700");
   }
 
-  function setInfoViewFileStats(filename, size, tag = null) {
-    infoViewFilename.innerText = filename;
-    
-    if (tag && TAG_FRIENDLY_NAMES[tag]) {
-      infoViewTag.innerText = `(${TAG_FRIENDLY_NAMES[tag]})`;
-      infoViewTag.classList.remove("hidden");
-    } else {
-      infoViewTag.classList.add("hidden");
-    }
-
-    infoViewSize.innerText = bytesToUnitsString(size);
-
-    let icon = getIconNameForFile(filename, tag);
-    infoViewIcon.src = `${ASSETS_DIR}/${icon}.svg`;
-    infoViewIcon.alt = icon;
-
-    infoViewDownloadLink.onclick = () => {
-      window.location.href = getRawUrl(filename);
-    };
-
-    infoViewFileStats.classList.remove("hidden");
-  }
-
   function sendCommand(command, args) {
     ws.send(JSON.stringify({"command": command, ...args}));
   }
@@ -220,7 +198,6 @@ window.onload = () => {
 
   function showFilePreview(info, path = browsePath) {
     const filename = info.name;
-
     let tag;
     if (info.tag) tag = info.tag.split("|")[0];
     else tag = null;
@@ -228,6 +205,32 @@ window.onload = () => {
     const type = getIconNameForFile(filename, tag);
     const rawUrl = getRawUrl(filename, path);
     changeInfoView();
+
+    // File stats (top)
+    infoViewFilename.innerText = filename;
+    
+    if (tag && TAG_FRIENDLY_NAMES[tag]) {
+      infoViewTag.innerText = `(${TAG_FRIENDLY_NAMES[tag]})`;
+      infoViewTag.classList.remove("hidden");
+    } else {
+      infoViewTag.classList.add("hidden");
+    }
+
+    infoViewSize.innerText = bytesToUnitsString(info.size);
+
+    infoViewIcon.src = `${ASSETS_DIR}/${type}.svg`;
+    infoViewIcon.alt = type;
+
+    infoViewDownloadLink.onclick = () => {
+      window.location.href = getRawUrl(filename) + (info.cgbi ? "?defry" : "");
+    };
+    infoViewDownloadOptions.onclick = () => {
+      const rect = infoViewDownloadOptions.getBoundingClientRect();
+      openContextMenu(info, rect.left - contextMenu.clientWidth + infoViewDownloadOptions.clientWidth, rect.bottom + 4, path);
+    };
+
+    infoViewFileStats.classList.remove("hidden");
+
 
     if (type == "image") {
       imageViewerPreview.src = rawUrl + (info.cgbi ? "?defry" : "");
@@ -238,6 +241,115 @@ window.onload = () => {
         imageViewerDimensions.innerText = `(${imageViewerPreview.naturalWidth} x ${imageViewerPreview.naturalHeight} px)`;
       };
     }
+  }
+
+  function openContextMenu(info, x, y, path = browsePath, listingElement = null) {
+    const filename = info.name;
+    const extension = filename.split(".").pop();
+    let tag;
+    if (info.tag) tag = info.tag.split("|")[0];
+    else tag = null;
+
+    if (listingElement) {
+      contextMenuFilename.classList.remove("hidden");
+      contextMenuFilename.innerText = filename;
+    } else {
+      contextMenuFilename.classList.add("hidden");
+    }
+
+    if (info.is_dir || !listingElement) {
+      contextMenuInfo.classList.add("hidden");
+    } else {
+      contextMenuInfo.classList.remove("hidden");
+      contextMenuInfo.onclick = () => {
+        dismissContextMenu();
+        setSelectedFile(listingElement);
+        showFilePreview(info, path);
+      };
+    }
+
+    const download = (event) => {
+      window.location.href = event.target.closest("button").getAttribute("data-url");
+      dismissContextMenu();
+    };
+
+    const rawUrl = getRawUrl(filename, path);
+    contextMenuDownload.setAttribute("data-url", rawUrl);
+    contextMenuDownload.onclick = download;
+    contextMenuDownloadRaw.onclick = download;
+    contextMenuDownloadXml.onclick = download;
+    contextMenuDownloadJson.onclick = download;
+    contextMenuDownloadPng.onclick = download;
+
+    if (extension == "png" && info.cgbi) {
+      contextMenuDownload.setAttribute("data-url", rawUrl + "?defry");
+      contextMenuDownloadRaw.classList.remove("hidden");
+      contextMenuDownloadRaw.setAttribute("data-url", rawUrl);
+    } else if (info.plist_type) {
+      if (info.plist_type != "xml") {
+        contextMenuDownloadXml.setAttribute("data-url", rawUrl + "?xml");
+        contextMenuDownloadXml.classList.remove("hidden");
+      }
+      contextMenuDownloadJson.setAttribute("data-url", rawUrl + "?json");
+      contextMenuDownloadJson.classList.remove("hidden");
+    } else {
+      contextMenuDownloadRaw.classList.add("hidden");
+      contextMenuDownloadXml.classList.add("hidden");
+      contextMenuDownloadJson.classList.add("hidden");
+    }
+
+    if (info.is_dir) {
+      contextMenuDownload.onclick = () => {
+        extractingDmg = filename;
+        decryptingDmg = rawUrl;
+        infoViewFileStats.classList.add("hidden");
+        changeInfoView(infoViewExtracting);
+        extractingStatus.innerText = "Waiting...";
+        extractingBarFill.style.width = "0%";
+        toggleLeftSidebar(false);
+
+        sendCommand("storefolder", {"path": `${path}/${filename}`});
+        dismissContextMenu();
+      };
+    }
+
+    if (info.has_key === true) {
+      contextMenuDownloadDecrypted.onclick = () => {
+        if (DIR_LIKE_FILES.includes(extension) && !extractedDmgs.includes(filename)) {
+          extractingDmg = filename;
+          decryptingDmg = rawUrl + "?decrypt";
+          setInfoViewFileStats(filename, dmgInfo[filename].size, dmgInfo[filename].tag);
+          changeInfoView(infoViewExtracting);
+          extractingStatus.innerText = "Waiting...";
+          extractingBarFill.style.width = "0%";
+          toggleLeftSidebar(false);
+          
+          sendCommand("decryptdmg", {"path": `${path}/${filename}`});
+        } else {
+          window.location.href = rawUrl + "?decrypt";
+        }
+
+        dismissContextMenu();
+      };
+      contextMenuDownloadDecrypted.classList.remove("hidden");
+
+      if (tag == "ibootim" || tag == "applelogo") {
+        contextMenuDownloadPng.setAttribute("data-url", rawUrl + "?png");
+        contextMenuDownloadPng.classList.remove("hidden");
+      } else {
+        contextMenuDownloadPng.classList.add("hidden");
+      }
+    } else {
+      contextMenuDownloadDecrypted.classList.add("hidden");
+    }
+
+    if (y + contextMenu.offsetHeight > window.innerHeight) y = window.innerHeight - contextMenu.offsetHeight;
+    if (x + contextMenu.offsetWidth > window.innerWidth) x = window.innerWidth - contextMenu.offsetWidth;
+
+    contextMenu.classList.remove("opacity-0");
+    contextMenu.classList.add("opacity-100", "visible");
+    contextMenu.style.left = `${x}px`;
+    contextMenu.style.top = `${y}px`;
   }
 
   ws.onmessage = (event) => {
@@ -449,123 +561,21 @@ window.onload = () => {
 
           if (!info.is_dir && !is_dir_like) {
             setSelectedFile(clone);
-            setInfoViewFileStats(filename, info.size, tag);
             showFilePreview(info, path);
           }
-        };
-
-        let openContextMenu = (event) => {
-          contextMenuFilename.innerText = filename;
-
-          if (info.is_dir) {
-            contextMenuInfo.classList.add("hidden");
-          } else {
-            contextMenuInfo.classList.remove("hidden");
-            contextMenuInfo.onclick = () => {
-              dismissContextMenu();
-              setSelectedFile(clone);
-              setInfoViewFileStats(filename, info.size, tag);
-              showFilePreview(info, path);
-            };
-          }
-
-          const download = (event) => {
-            window.location.href = event.target.closest("button").getAttribute("data-url");
-            dismissContextMenu();
-          };
-
-          const rawUrl = getRawUrl(filename, path);
-          contextMenuDownload.setAttribute("data-url", rawUrl);
-          contextMenuDownload.onclick = download;
-          contextMenuDownloadRaw.onclick = download;
-          contextMenuDownloadXml.onclick = download;
-          contextMenuDownloadJson.onclick = download;
-          contextMenuDownloadPng.onclick = download;
-
-          if (extension == "png" && info.cgbi) {
-            contextMenuDownload.setAttribute("data-url", rawUrl + "?defry");
-            contextMenuDownloadRaw.classList.remove("hidden");
-            contextMenuDownloadRaw.setAttribute("data-url", rawUrl);
-          } else if (info.plist_type) {
-            if (info.plist_type != "xml") {
-              contextMenuDownloadXml.setAttribute("data-url", rawUrl + "?xml");
-              contextMenuDownloadXml.classList.remove("hidden");
-            }
-            contextMenuDownloadJson.setAttribute("data-url", rawUrl + "?json");
-            contextMenuDownloadJson.classList.remove("hidden");
-          } else {
-            contextMenuDownloadRaw.classList.add("hidden");
-            contextMenuDownloadXml.classList.add("hidden");
-            contextMenuDownloadJson.classList.add("hidden");
-          }
-
-          if (info.is_dir) {
-            contextMenuDownload.onclick = () => {
-              extractingDmg = filename;
-              decryptingDmg = rawUrl;
-              infoViewFileStats.classList.add("hidden");
-              changeInfoView(infoViewExtracting);
-              extractingStatus.innerText = "Waiting...";
-              extractingBarFill.style.width = "0%";
-              toggleLeftSidebar(false);
-
-              sendCommand("storefolder", {"path": `${path}/${filename}`});
-              dismissContextMenu();
-            };
-          }
-
-          if (info.has_key === true) {
-            contextMenuDownloadDecrypted.onclick = () => {
-              if (DIR_LIKE_FILES.includes(extension) && !extractedDmgs.includes(filename)) {
-                extractingDmg = filename;
-                decryptingDmg = rawUrl + "?decrypt";
-                setInfoViewFileStats(filename, dmgInfo[filename].size, dmgInfo[filename].tag);
-                changeInfoView(infoViewExtracting);
-                extractingStatus.innerText = "Waiting...";
-                extractingBarFill.style.width = "0%";
-                toggleLeftSidebar(false);
-                
-                sendCommand("decryptdmg", {"path": `${path}/${filename}`});
-              } else {
-                window.location.href = rawUrl + "?decrypt";
-              }
-
-              dismissContextMenu();
-            };
-            contextMenuDownloadDecrypted.classList.remove("hidden");
-
-            if (tag == "ibootim" || tag == "applelogo") {
-              contextMenuDownloadPng.setAttribute("data-url", rawUrl + "?png");
-              contextMenuDownloadPng.classList.remove("hidden");
-            } else {
-              contextMenuDownloadPng.classList.add("hidden");
-            }
-          } else {
-            contextMenuDownloadDecrypted.classList.add("hidden");
-          }
-
-          let newY = event.clientY;
-          let newX = event.clientX;
-          if (newY + contextMenu.offsetHeight > window.innerHeight) newY = window.innerHeight - contextMenu.offsetHeight;
-          if (newX + contextMenu.offsetWidth > window.innerWidth) newX = window.innerWidth - contextMenu.offsetWidth;
-
-          contextMenu.classList.remove("opacity-0");
-          contextMenu.classList.add("opacity-100", "visible");
-          contextMenu.style.left = `${newX}px`;
-          contextMenu.style.top = `${newY}px`;
         };
 
         clone.oncontextmenu = (event) => {
           event.preventDefault();
           if (!isMouse) return;
-          openContextMenu(event);
+          openContextMenu(info, event.clientX, event.clientY, path, clone);
         };
 
         let holdTimeout = null;
         clone.onpointerdown = (event) => {
           if (isMouse) return;
           holdTimeout = setTimeout(() => {
-            openContextMenu(event);
+            openContextMenu(info, event.clientX, event.clientY, path, clone);
           }, MOBILE_CONTEXT_MENU_HOLD_SECONDS * 1000);
         };
         clone.onpointerup = () => {
@@ -670,7 +680,7 @@ window.onload = () => {
     initStatus.innerText = "Disconnected from server, please refresh";
   };
 
-  document.onclick = (event) => {
+  document.onpointerdown = (event) => {
     if (!contextMenu.contains(event.target)) dismissContextMenu();
   };
 
