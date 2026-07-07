@@ -76,6 +76,7 @@ window.onload = () => {
   const listingSearchStatus = document.getElementById("listing-search-status");
   const listingSearchClearButton = document.getElementById("search-clear-button");
   const listingFilesView = document.getElementById("listing-files-view");
+  const listingLeftSidebar = document.getElementById("listing-left-sidebar");
   const listingFileTemplate = document.getElementById("listing-file-template");
   const searchResultsPathTemplate = document.getElementById("search-results-path-template");
   listingFileTemplate.remove();
@@ -176,6 +177,7 @@ window.onload = () => {
       extractingStatus.innerText = "Waiting...";
       extractingBarFill.style.width = "0%";
       listingPathText.innerHTML += LISTING_PATH_EXTRACTING_TEXT;
+      toggleLeftSidebar(false);
     }
 
     browsePath = removeTrailingSlash(path);
@@ -194,6 +196,16 @@ window.onload = () => {
     contextMenu.classList.add("opacity-0");
     contextMenu.style.left = "0";
     contextMenu.style.top = "0";
+  }
+
+  function toggleLeftSidebar(enable = null) {
+    if (enable === null) enable = listingLeftSidebar.classList.contains("pointer-events-none");
+
+    if (enable) {
+      listingLeftSidebar.classList.remove("pointer-events-none", "opacity-50");
+    } else {
+      listingLeftSidebar.classList.add("pointer-events-none", "opacity-50");
+    }
   }
 
   ws.onmessage = (event) => {
@@ -259,14 +271,16 @@ window.onload = () => {
 
     if (extractingDmg) {
       if (data.status == "done") {
-        extractedDmgs.push(extractingDmg);
         extractingDmg = false;
         extractingStatus.innerText = "Done";
         extractingBarFill.style.width = "100%";
+        toggleLeftSidebar(true);
 
         if (decryptingDmg) {
           window.location.href = decryptingDmg;
           decryptingDmg = false;
+        } else {
+          extractedDmgs.push(extractingDmg);
         }
       } else if (data.status == "error") {
         extractingStatus.innerText = `Error: ${data.message}`;
@@ -393,7 +407,7 @@ window.onload = () => {
         clone.onclick = () => {
           let is_dir_like = DIR_LIKE_FILES.includes(extension);
 
-          if ((info.is_dir || is_dir_like) && !(extractingDmg && is_dir_like && filename != extractingDmg)) {
+          if ((info.is_dir || is_dir_like) && !(extractingDmg && is_dir_like)) {
             navigateTo(targetPath);
           }
 
@@ -451,17 +465,18 @@ window.onload = () => {
 
           if (info.has_key === true) {
             contextMenuDownloadDecrypted.onclick = () => {
-              if (DIR_LIKE_FILES.includes(extension)) {
+              if (DIR_LIKE_FILES.includes(extension) && !extractedDmgs.includes(filename)) {
                 extractingDmg = filename;
                 decryptingDmg = rawUrl + "?decrypt";
                 setInfoViewFileStats(filename, dmgInfo[filename].size, dmgInfo[filename].tag);
                 changeInfoView(infoViewExtracting);
                 extractingStatus.innerText = "Waiting...";
                 extractingBarFill.style.width = "0%";
+                toggleLeftSidebar(false);
                 
                 sendCommand("decryptdmg", {"path": `${path}/${filename}`});
               } else {
-                window.location.setAttribute("data-url", rawUrl + "?decrypt");
+                window.location.href = rawUrl + "?decrypt";
               }
 
               dismissContextMenu();
