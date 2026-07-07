@@ -73,7 +73,7 @@
             <div data-field="filename" class="overflow-hidden min-w-0 grow whitespace-nowrap text-ellipsis text-sm">Filename</div>
             <div data-field="tag" class="text-xs text-slate-600 dark:text-zinc-400 ms-auto group-hover/file:hidden whitespace-nowrap hidden">(Tag)</div>
           </div>
-          <img data-field="no-key" src="/assets/no-key.svg" alt="No decryption key available" title="No decryption key available" class="opacity-50 dark:invert min-w-3 h-3 hidden">
+          <img data-field="no-key" src="/assets/no-key.svg" alt="No decryption key available" class="opacity-50 dark:invert min-w-3 h-3 hidden">
           <img data-field="dir-arrow" src="/assets/chevron-right.svg" alt="Browse directory" class="h-5 dark:invert ms-auto hidden">
         </button>
       </div>
@@ -114,7 +114,7 @@
     </div>
   </div>
 
-  <div id="context-menu" class="flex flex-col p-3 bg-slate-100 dark:bg-zinc-800 border-1 border-solid border-slate-300 dark:border-zinc-700 w-80 h-max absolute left-0 right-0 rounded-2xl shadow-xl/3 transition transition-discrete opacity-0 select-none invisible">
+  <div id="context-menu" class="flex flex-col p-3 bg-slate-100 dark:bg-zinc-800 border-1 border-solid border-slate-300 dark:border-zinc-700 w-80 h-max absolute rounded-2xl shadow-xl/3 transition transition-discrete opacity-0 select-none invisible">
     <div id="context-menu-filename" class="text-slate-600 dark:text-zinc-400 text-xs ml-1 mb-2">048-2955-001.dmg</div>
 
     <button id="context-menu-info" class="flex flex-row items-center gap-2 p-2 w-full h-10 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 cursor-pointer transition">
@@ -152,5 +152,7 @@
       <div class="text-sm">Download (JSON)</div>
     </button>
   </div>
+
+  <div id="tooltip" class="absolute p-2 bg-slate-100 dark:bg-zinc-800 rounded-xl border-1 border-slate-300 dark:border-zinc-700 shadow-xl/3 text-sm opacity-0 transition transition-discrete invisible">Tip</div>
 </body>
 </html>

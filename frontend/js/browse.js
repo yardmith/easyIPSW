@@ -105,6 +105,8 @@ window.onload = () => {
   const contextMenuDownloadDecrypted = document.getElementById("context-menu-download-decrypted");
   const contextMenuDownloadPng = document.getElementById("context-menu-download-png");
 
+  const tooltip = document.getElementById("tooltip");
+
   const isMouse = window.matchMedia("(pointer: fine)").matches;
   const ipswId = window.location.pathname.split("/")[1];
   const wsProtocol = window.location.protocol == "https:" ? "wss" : "ws";
@@ -549,7 +551,27 @@ window.onload = () => {
           selectedFile = clone;
           clone.classList.add("bg-slate-200", "dark:bg-zinc-700");
         }
-        if (info.has_key === false) clone.querySelector('[data-field="no-key"]').classList.remove("hidden");
+
+        if (info.has_key === false) {
+          const noKey = clone.querySelector('[data-field="no-key"]');
+          noKey.classList.remove("hidden");
+          noKey.onpointerenter = (event) => {
+            const rect = noKey.getBoundingClientRect();
+
+            tooltip.innerText = "No decryption key available";
+
+            tooltip.style.top = `${rect.top - tooltip.offsetHeight - 2}px`;
+            tooltip.style.left = `${rect.left - tooltip.offsetWidth / 2 + noKey.offsetWidth / 2}px`;
+
+            tooltip.classList.remove("opacity-0");
+            tooltip.classList.add("opacity-100", "visible");
+          };
+          noKey.onpointerleave = () => {
+            tooltip.classList.remove("opacity-100", "visible");
+            tooltip.classList.add("opacity-0");
+          };
+        }
+
         clone.removeAttribute("id");
         clone.setAttribute("data-filename", filename);
         clone.classList.remove("hidden");
