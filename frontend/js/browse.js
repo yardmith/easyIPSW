@@ -286,7 +286,8 @@ window.onload = () => {
         extractingStatus.innerText = `Error: ${data.message}`;
         extractingBar.classList.add("hidden");
         extractingDmg = false;
-      } else if (data.status == "decrypting" || data.status == "extracting") {
+        decryptingDmg = false;
+      } else if (["decrypting", "extracting", "storing"].includes(data.status)) {
         let percent = 0;
 
         let bytesDone;
@@ -300,9 +301,12 @@ window.onload = () => {
           bytesTotal = bytesToUnitsString(bytesTotal);
           if (bytesDone.split(" ")[1] == bytesTotal.split(" ")[1]) bytesDone = bytesDone.split(" ")[0];
           extractingStatus.innerText = `Decrypting ${extractingDmg}... (${bytesDone}/${bytesTotal})`;
-        } else {
+        } else if (data.status == "extracting") {
           percent = data.percent_completed;
           extractingStatus.innerText = `Extracting ${extractingDmg}... (${percent}%)`;
+        } else if (data.status == "storing") {
+          percent = data.percent_completed;
+          extractingStatus.innerText = `Zipping ${extractingDmg}... (${percent}%)`;
         }
 
         if ("steps_done" in data && "steps_total" in data) {
@@ -461,6 +465,21 @@ window.onload = () => {
             contextMenuDownloadRaw.classList.add("hidden");
             contextMenuDownloadXml.classList.add("hidden");
             contextMenuDownloadJson.classList.add("hidden");
+          }
+
+          if (info.is_dir) {
+            contextMenuDownload.onclick = () => {
+              extractingDmg = filename;
+              decryptingDmg = rawUrl;
+              infoViewFileStats.classList.add("hidden");
+              changeInfoView(infoViewExtracting);
+              extractingStatus.innerText = "Waiting...";
+              extractingBarFill.style.width = "0%";
+              toggleLeftSidebar(false);
+
+              sendCommand("storefolder", {"path": `${path}/${filename}`});
+              dismissContextMenu();
+            };
           }
 
           if (info.has_key === true) {
