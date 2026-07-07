@@ -336,7 +336,7 @@ window.onload = () => {
       }
       let lastDirPos = -1;
       listing.forEach((file, index) => {
-        if (file.is_dir) {
+        if (file.is_dir || (isSearchResults && file.path == browsePath)) {
           lastDirPos++;
           listing.splice(index, 1);
           listing.splice(lastDirPos, 0, file);
@@ -370,7 +370,7 @@ window.onload = () => {
         let clone = listingFileTemplate.cloneNode(true);
         clone.querySelector('[data-field="filename"]').innerText = filename;
         
-        if (isSearchResults && info.path != lastPath) {
+        if (isSearchResults && info.path != lastPath && info.path != browsePath) {
           lastPath = info.path;
           container = document.createElement("div");
           listingFilesView.appendChild(container);
