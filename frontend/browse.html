@@ -34,6 +34,7 @@
   <link rel="preload" href="/assets/info.svg" as="image" type="image/svg+xml">
   <link rel="preload" href="/assets/unlock.svg" as="image" type="image/svg+xml">
   <link rel="preload" href="/assets/no-key.svg" as="image" type="image/svg+xml">
+  <link rel="preload" href="/assets/checker.svg" as="image" type="image/svg+xml">
 </head>
 <body class="font-[Inter] bg-slate-50 dark:bg-zinc-900 text-slate-900 dark:text-zinc-50 overscroll-none scheme-light-dark">
   <div id="init-page" class="flex flex-col gap-4 h-svh items-center justify-center absolute left-0 right-0 invisible">
@@ -103,6 +104,11 @@
 
       <div id="info-start" class="grow w-full sm:w-auto sm:h-full flex flex-col justify-center items-center">
         <div class="text-slate-600 dark:text-zinc-400">Select a file to view it</div>
+      </div>
+
+      <div id="info-image-viewer" class="grow w-full sm:w-auto sm:h-full flex flex-col justify-center items-center gap-2 hidden">
+        <img id="image-viewer-preview" src="/iPhone2,1_6.1.6_10B500_Restore.ipsw/raw/048-2955-001.dmg/Applications/Weather.app/icon.png?defry" alt="icon.png" class="max-h-1/2 border-1 border-slate-300 bg-[url(/assets/checker.svg)]">
+        <div id="image-viewer-dimensions" class="text-xs text-slate-600">(61 x 62 px)</div>
       </div>
 
       <div id="info-extracting" class="grow w-full flex flex-col justify-center items-center gap-4 hidden">

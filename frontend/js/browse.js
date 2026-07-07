@@ -62,50 +62,58 @@ function getIconNameForFile(filename, tag = null) {
   return "file";
 }
 
+function getElem(id) {
+  return document.getElementById(id);
+}
+
 window.onload = () => {
   let browsePath = removeTrailingSlash("/" + window.location.pathname.split("/").slice(3).join("/"));
 
-  const initPage = document.getElementById("init-page");
-  const initBar = document.getElementById("init-progress-bar");
-  const initBarFill = document.getElementById("init-progress-bar-fill");
-  const initStatus = document.getElementById("init-status-text");
+  const initPage = getElem("init-page");
+  const initBar = getElem("init-progress-bar");
+  const initBarFill = getElem("init-progress-bar-fill");
+  const initStatus = getElem("init-status-text");
 
-  const listingPage = document.getElementById("listing-page");
-  const listingPathText = document.getElementById("listing-path");
-  const listingSearchBox = document.getElementById("listing-search-box");
-  const listingSearchStatus = document.getElementById("listing-search-status");
-  const listingSearchClearButton = document.getElementById("search-clear-button");
-  const listingFilesView = document.getElementById("listing-files-view");
-  const listingLeftSidebar = document.getElementById("listing-left-sidebar");
-  const listingFileTemplate = document.getElementById("listing-file-template");
-  const searchResultsPathTemplate = document.getElementById("search-results-path-template");
+  const listingPage = getElem("listing-page");
+  const listingPathText = getElem("listing-path");
+  const listingSearchBox = getElem("listing-search-box");
+  const listingSearchStatus = getElem("listing-search-status");
+  const listingSearchClearButton = getElem("search-clear-button");
+  const listingFilesView = getElem("listing-files-view");
+  const listingLeftSidebar = getElem("listing-left-sidebar");
+  const listingFileTemplate = getElem("listing-file-template");
+  const searchResultsPathTemplate = getElem("search-results-path-template");
   listingFileTemplate.remove();
   searchResultsPathTemplate.remove();
 
-  const infoView = document.getElementById("listing-info-view");
-  const infoViewFileStats = document.getElementById("info-view-file-stats");
-  const infoViewIcon = document.getElementById("info-view-stats-icon");
-  const infoViewFilename = document.getElementById("info-view-stats-filename");
-  const infoViewTag = document.getElementById("info-view-stats-tag");
-  const infoViewSize = document.getElementById("info-view-stats-size");
-  const infoViewDownloadLink = document.getElementById("info-view-stats-download");
-  const infoViewStart = document.getElementById("info-start");
-  const infoViewExtracting = document.getElementById("info-extracting");
-  const extractingBar = document.getElementById("extracting-progress-bar");
-  const extractingBarFill = document.getElementById("extracting-progress-bar-fill");
-  const extractingStatus = document.getElementById("extracting-status-text");
+  const infoView = getElem("listing-info-view");
+  const infoViewFileStats = getElem("info-view-file-stats");
+  const infoViewIcon = getElem("info-view-stats-icon");
+  const infoViewFilename = getElem("info-view-stats-filename");
+  const infoViewTag = getElem("info-view-stats-tag");
+  const infoViewSize = getElem("info-view-stats-size");
+  const infoViewDownloadLink = getElem("info-view-stats-download");
+  const infoViewStart = getElem("info-start");
+  const infoViewExtracting = getElem("info-extracting");
+  const extractingBar = getElem("extracting-progress-bar");
+  const extractingBarFill = getElem("extracting-progress-bar-fill");
+  const extractingStatus = getElem("extracting-status-text");
 
-  const contextMenu = document.getElementById("context-menu");
-  const contextMenuFilename = document.getElementById("context-menu-filename");
-  const contextMenuInfo = document.getElementById("context-menu-info");
-  const contextMenuDownload = document.getElementById("context-menu-download");
-  const contextMenuDownloadRaw = document.getElementById("context-menu-download-raw");
-  const contextMenuDownloadXml = document.getElementById("context-menu-download-xml");
-  const contextMenuDownloadJson = document.getElementById("context-menu-download-json");
-  const contextMenuDownloadDecrypted = document.getElementById("context-menu-download-decrypted");
-  const contextMenuDownloadPng = document.getElementById("context-menu-download-png");
+  const contextMenu = getElem("context-menu");
+  const contextMenuFilename = getElem("context-menu-filename");
+  const contextMenuInfo = getElem("context-menu-info");
+  const contextMenuDownload = getElem("context-menu-download");
+  const contextMenuDownloadRaw = getElem("context-menu-download-raw");
+  const contextMenuDownloadXml = getElem("context-menu-download-xml");
+  const contextMenuDownloadJson = getElem("context-menu-download-json");
+  const contextMenuDownloadDecrypted = getElem("context-menu-download-decrypted");
+  const contextMenuDownloadPng = getElem("context-menu-download-png");
 
-  const tooltip = document.getElementById("tooltip");
+  const tooltip = getElem("tooltip");
+
+  const imageViewer = getElem("info-image-viewer");
+  const imageViewerPreview = getElem("image-viewer-preview");
+  const imageViewerDimensions = getElem("image-viewer-dimensions");
 
   const isMouse = window.matchMedia("(pointer: fine)").matches;
   const ipswId = window.location.pathname.split("/")[1];
@@ -124,9 +132,9 @@ window.onload = () => {
     }
   }
 
-  function changeInfoView(view) {
+  function changeInfoView(view = null) {
     hideInfoViews();
-    view.classList.remove("hidden");
+    if (view) view.classList.remove("hidden");
   }
 
   function getListingElementFromFilename(filename) {
@@ -207,6 +215,28 @@ window.onload = () => {
       listingLeftSidebar.classList.remove("pointer-events-none", "opacity-50");
     } else {
       listingLeftSidebar.classList.add("pointer-events-none", "opacity-50");
+    }
+  }
+
+  function showFilePreview(info, path = browsePath) {
+    const filename = info.name;
+
+    let tag;
+    if (info.tag) tag = info.tag.split("|")[0];
+    else tag = null;
+
+    const type = getIconNameForFile(filename, tag);
+    const rawUrl = getRawUrl(filename, path);
+    changeInfoView();
+
+    if (type == "image") {
+      imageViewerPreview.src = rawUrl + (info.cgbi ? "?defry" : "");
+      imageViewerPreview.alt = filename;
+
+      imageViewerPreview.onload = () => {
+        changeInfoView(imageViewer);
+        imageViewerDimensions.innerText = `(${imageViewerPreview.naturalWidth} x ${imageViewerPreview.naturalHeight} px)`;
+      };
     }
   }
 
@@ -420,7 +450,7 @@ window.onload = () => {
           if (!info.is_dir && !is_dir_like) {
             setSelectedFile(clone);
             setInfoViewFileStats(filename, info.size, tag);
-            // showFilePreview(filename);
+            showFilePreview(info, path);
           }
         };
 
@@ -435,7 +465,7 @@ window.onload = () => {
               dismissContextMenu();
               setSelectedFile(clone);
               setInfoViewFileStats(filename, info.size, tag);
-              // showFilePreview(filename);
+              showFilePreview(info, path);
             };
           }
 
@@ -453,7 +483,7 @@ window.onload = () => {
           contextMenuDownloadPng.onclick = download;
 
           if (extension == "png" && info.cgbi) {
-            contextMenuDownload.setAttribute("data-url", rawUrl);
+            contextMenuDownload.setAttribute("data-url", rawUrl + "?defry");
             contextMenuDownloadRaw.classList.remove("hidden");
             contextMenuDownloadRaw.setAttribute("data-url", rawUrl);
           } else if (info.plist_type) {
