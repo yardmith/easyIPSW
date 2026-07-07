@@ -22,12 +22,7 @@ const EXTENSION_ICONS = {
   "jpeg": "image",
   "gif": "image",
   "webp": "image",
-  "heic": "image",
-  "heif": "image",
-  "tif": "image",
-  "tiff": "image",
   "svg": "image",
-  "eps": "image",
 
   "dmg": "dmg",
   "aea": "dmg",
