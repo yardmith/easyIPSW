@@ -687,7 +687,7 @@ function storeFolder($path, LoopInterface $loop) {
       return;
     }
 
-    $process = new Process(BIN_DIR . "7zz a -mx0 -mmt  -y -bso2 -bse2 -bsp1 " . escapeshellarg("$path.zipped") . " " . escapeshellarg("$path/*") . " 2> /dev/null");
+    $process = new Process(BIN_DIR . "7zz a -mx0 -mmt -y -bso2 -bse2 -bsp1 -xr!*." . implode(" -xr!*.", array_diff(IGNORE_EXTENSIONS, ["original"])) . " " . escapeshellarg("$path.zipped") . " " . escapeshellarg("$path/*") . " 2> /dev/null");
     $process->start();
     $prevPercent = null;
 
@@ -703,8 +703,33 @@ function storeFolder($path, LoopInterface $loop) {
       $prevPercent = $percent;
     });
 
-    $process->on("exit", function() use ($job) {
-      removeJob($job);
+    $process->on("exit", function() use ($job, $path) {
+      publishJobProgress($job, "finalizing");
+
+      $originalFiles = [];
+      $dir = new RecursiveDirectoryIterator($path);
+      $iterator = new RecursiveIteratorIterator($dir);
+      foreach ($iterator as $file) {
+        if ($file->getExtension() == "original") {
+          array_push($originalFiles, str_replace([".original", "$path/"], "", $file->getPathname()));
+        }
+      }
+
+      $renameArgs = [];
+      foreach ($originalFiles as $filename) {
+        array_push($renameArgs, escapeshellarg("$filename.original"), escapeshellarg($filename));
+      }
+
+      foreach ($originalFiles as &$filename) {
+        $filename = escapeshellarg($filename);
+      }
+
+      $process = new Process(BIN_DIR . "7zz d " . escapeshellarg("$path.zipped") . " " . implode(" ", $originalFiles) . " && " . BIN_DIR . "7zz rn " . escapeshellarg("$path.zipped") . " " . implode(" ", $renameArgs));
+      $process->start();
+
+      $process->on("exit", function() use ($job) {
+        removeJob($job);
+      });
     });
   });
 
