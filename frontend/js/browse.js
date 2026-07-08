@@ -232,8 +232,15 @@ window.onload = () => {
     infoViewFileStats.classList.remove("hidden");
 
 
-    if (type == "image") {
-      imageViewerPreview.src = rawUrl + (info.cgbi ? "?defry" : "");
+
+    if (type == "image" || type == "applelogo") {
+      let url = rawUrl;
+      if (info.cgbi)
+        url += "?defry";
+      else if (tag == "ibootim" || tag == "applelogo")
+        url += "?png";
+
+      imageViewerPreview.src = url;
       imageViewerPreview.alt = filename;
 
       imageViewerPreview.onload = () => {
@@ -280,7 +287,7 @@ window.onload = () => {
     contextMenuDownloadXml.onclick = download;
     contextMenuDownloadJson.onclick = download;
     contextMenuDownloadPng.onclick = download;
-    
+
     contextMenuDownloadRaw.classList.add("hidden");
     contextMenuDownloadXml.classList.add("hidden");
     contextMenuDownloadJson.classList.add("hidden");
