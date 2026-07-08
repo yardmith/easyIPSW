@@ -160,7 +160,7 @@ window.onload = () => {
     let dmgToExtract = pathNeedsDmgExtraction(path);
     if (dmgToExtract && !extractingDmg) {
       extractingDmg = dmgToExtract;
-      setInfoViewFileStats(dmgToExtract, dmgInfo[dmgToExtract].size, dmgInfo[dmgToExtract].tag);
+      showFilePreview({...dmgInfo[dmgToExtract], "name": dmgToExtract});
       changeInfoView(infoViewExtracting);
       extractingStatus.innerText = "Waiting...";
       extractingBarFill.style.width = "0%";
@@ -325,7 +325,7 @@ window.onload = () => {
         if (DIR_LIKE_FILES.includes(extension) && !extractedDmgs.includes(filename)) {
           extractingDmg = filename;
           decryptingDmg = rawUrl + "?decrypt";
-          setInfoViewFileStats(filename, dmgInfo[filename].size, dmgInfo[filename].tag);
+          showFilePreview(info);
           changeInfoView(infoViewExtracting);
           extractingStatus.innerText = "Waiting...";
           extractingBarFill.style.width = "0%";
