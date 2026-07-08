@@ -280,6 +280,10 @@ window.onload = () => {
     contextMenuDownloadXml.onclick = download;
     contextMenuDownloadJson.onclick = download;
     contextMenuDownloadPng.onclick = download;
+    
+    contextMenuDownloadRaw.classList.add("hidden");
+    contextMenuDownloadXml.classList.add("hidden");
+    contextMenuDownloadJson.classList.add("hidden");
 
     if (extension == "png" && info.cgbi) {
       contextMenuDownload.setAttribute("data-url", rawUrl + "?defry");
@@ -292,10 +296,6 @@ window.onload = () => {
       }
       contextMenuDownloadJson.setAttribute("data-url", rawUrl + "?json");
       contextMenuDownloadJson.classList.remove("hidden");
-    } else {
-      contextMenuDownloadRaw.classList.add("hidden");
-      contextMenuDownloadXml.classList.add("hidden");
-      contextMenuDownloadJson.classList.add("hidden");
     }
 
     if (info.is_dir) {
