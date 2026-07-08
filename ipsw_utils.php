@@ -504,6 +504,7 @@ function getDirListing($path, $ipswId = null) {
       if ($pathList) $entry["path"] = getRelativePath($path);
       $entry["size"] = filesize($actualPath);
       if (array_key_exists($name, $tags)) $entry["tag"] = $tags[$name];
+      if (!isset($entry["tag"]) && identifyImg($actualPath) && str_contains(file_get_contents($actualPath), "EmbeddedImages")) $entry["tag"] = "ibootim";
       if (identifyImg($actualPath) || file_get_contents($actualPath, length: 8) == "encrcdsa") $entry["has_key"] = (bool)getKeyFromPath($filePath);
       if (identifyImg($actualPath) == 2) $entry["has_key"] = true;
       if ($isDmg) $entry["extracted"] = isDmgExtracted($filePath);
