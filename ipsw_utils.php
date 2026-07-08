@@ -379,7 +379,7 @@ function getFileTags($ipswId) {
 
       $tag = match ($name) {
         "AppleLogo" => "applelogo",
-        "BatteryCharging", "BatteryCharging0", "BatteryCharging1", "BatteryFull", "BatteryLow0", "BatteryLow1", "BatteryPlugin", "RecoveryMode" => "ibootim",
+        "BatteryCharging", "BatteryCharging0", "BatteryCharging1", "BatteryFull", "BatteryLow0", "BatteryLow1", "BatteryPlugin", "RecoveryMode", "NeedService" => "ibootim",
         "DeviceTree" => "devicetree",
         "KernelCache" => "kernelcache",
         "LLB" => "llb",
