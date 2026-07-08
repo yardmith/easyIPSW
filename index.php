@@ -41,7 +41,8 @@ Flight::route("/@id/raw/*", function($id) {
   $cachePath = CACHE_DIR . "/$id$path";
 
   if (!getIpswIdFromPath($cachePath) || $path == "/" || $path == "") {
-    Flight::halt(404, "File/directory not found");
+    Flight::notFound();
+    Flight::halt(404);
   }
 
   $serveFile = function() use ($cachePath, $path) {
@@ -178,7 +179,8 @@ Flight::route("/@id/raw/*", function($id) {
       });
       return;
     } elseif (!is_file($cachePath) || in_array(pathinfo($cachePath, PATHINFO_EXTENSION), IGNORE_EXTENSIONS)) {
-      Flight::halt(404, "File/directory not found");
+      Flight::notFound();
+      Flight::halt(404);
     }
     
     Flight::download($cachePath);
