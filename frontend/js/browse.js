@@ -291,6 +291,7 @@ window.onload = () => {
     contextMenuDownloadRaw.classList.add("hidden");
     contextMenuDownloadXml.classList.add("hidden");
     contextMenuDownloadJson.classList.add("hidden");
+    contextMenuDownloadPng.classList.add("hidden");
 
     if (extension == "png" && info.cgbi) {
       contextMenuDownload.setAttribute("data-url", rawUrl + "?defry");
@@ -343,8 +344,6 @@ window.onload = () => {
       if (tag == "ibootim" || tag == "applelogo") {
         contextMenuDownloadPng.setAttribute("data-url", rawUrl + "?png");
         contextMenuDownloadPng.classList.remove("hidden");
-      } else {
-        contextMenuDownloadPng.classList.add("hidden");
       }
     } else {
       contextMenuDownloadDecrypted.classList.add("hidden");
