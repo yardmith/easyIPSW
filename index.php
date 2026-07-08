@@ -40,7 +40,7 @@ Flight::route("/@id/raw/*", function($id) {
   $path = urldecode(explode("/$id/raw", parse_url(Flight::request()->getFullUrl(), PHP_URL_PATH))[1]);
   $cachePath = CACHE_DIR . "/$id$path";
 
-  if (!getIpswIdFromPath($cachePath)) {
+  if (!getIpswIdFromPath($cachePath) || $path == "/" || $path == "") {
     Flight::halt(404, "File/directory not found");
   }
 
