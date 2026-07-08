@@ -422,7 +422,6 @@ window.onload = () => {
 
     if (extractingDmg) {
       if (data.status == "done") {
-        extractingDmg = false;
         extractingStatus.innerText = "Done";
         extractingBarFill.style.width = "100%";
         toggleLeftSidebar(true);
@@ -433,6 +432,8 @@ window.onload = () => {
         } else {
           extractedDmgs.push(extractingDmg);
         }
+        
+        extractingDmg = false;
       } else if (data.status == "error") {
         extractingStatus.innerText = `Error: ${data.message}`;
         extractingBar.classList.add("hidden");
