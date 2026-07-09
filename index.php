@@ -9,6 +9,8 @@ require_once "db_utils.php";
 require_once "ipsw_utils.php";
 
 function download($path, $filename = null) {
+  if (!is_file($path)) Flight::halt(404, "Download failed: file not found");
+
   Flight::response()->setRealHeader("Content-Disposition: attachment" . ($filename ? "; filename=\"$filename\"" : ""));
 
   $mimeType = mime_content_type($path);
@@ -64,8 +66,11 @@ Flight::route("/@id/raw/*", function($id) {
     $png = isset($query->png);
     $xml = isset($query->xml);
     $json = isset($query->json);
+    $wav = isset($query->wav);
 
-    if ($defry && pathinfo($cachePath, PATHINFO_EXTENSION) == "png" && str_ends_with(file_get_contents($cachePath, length: 16), "CgBI")) {
+    $extension = pathinfo($cachePath, PATHINFO_EXTENSION);
+
+    if ($defry && $extension == "png" && str_ends_with(file_get_contents($cachePath, length: 16), "CgBI")) {
       if (!is_file("$cachePath.defried")) {
         exec(BIN_DIR . "pngdefry -s .defried " . escapeshellarg($cachePath));
         rename(dirname($cachePath) . "/" . pathinfo($cachePath, PATHINFO_FILENAME) . ".defried.png", "$cachePath.defried");
@@ -74,7 +79,6 @@ Flight::route("/@id/raw/*", function($id) {
       return;
     }
     if ($decrypt) {
-      $extension = pathinfo($cachePath, PATHINFO_EXTENSION);
       $actualPath = is_file("$cachePath.original") ? "$cachePath.original" : $cachePath;
       $isRootFs = file_get_contents($actualPath, length: 8) == "encrcdsa";
       $isAea = $extension == "aea";
@@ -163,6 +167,14 @@ Flight::route("/@id/raw/*", function($id) {
         file_put_contents("$cachePath.jsonified", str_replace("    ", "  ", $json));
       }
       download("$cachePath.jsonified", basename($cachePath) . ".json");
+      return;
+    }
+    if ($wav && in_array($extension, WAVABLE_FILES)) {
+      if (!is_file("$cachePath.wavified")) {
+        exec("ffmpeg -i " . escapeshellarg($cachePath) . " " . escapeshellarg("$cachePath.wav"));
+        rename("$cachePath.wav", "$cachePath.wavified");
+      }
+      download("$cachePath.wavified", basename($cachePath) . ".wav");
       return;
     }
 

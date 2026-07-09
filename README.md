@@ -32,6 +32,7 @@ Apple's firmware files contain many encrypted files in several different formats
   - `redis`
 
   Installation of these extensions is outlined in the next section below.
+- FFmpeg
 - Cron (optional)
 
 ### Setup
@@ -147,7 +148,11 @@ Apple's firmware files contain many encrypted files in several different formats
     deactivate
     cd ..
     ```
-13. Configure crontab for periodic cache clearing (optional):
+13. If FFmpeg is not installed, install it (for converting some audio formats):
+    ```
+    sudo apt install ffmpeg
+    ```
+14. Configure crontab for periodic cache clearing (optional):
     ```
     crontab -e
     ```
