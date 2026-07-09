@@ -339,9 +339,9 @@ function extractDmg($path, LoopInterface $loop) {
 function identifyPlist($path) {
   if (!is_file($path)) return false;
 
-  $contents = file_get_contents($path, length: 6);
+  $contents = file_get_contents($path, 128);
 
-  if (str_contains($contents, "?xml")) {
+  if (str_contains($contents, "<!DOCTYPE plist")) {
     return "xml";
   } elseif (str_starts_with($contents, "bplist")) {
     return "binary";

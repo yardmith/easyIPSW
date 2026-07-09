@@ -69,6 +69,8 @@ Flight::route("/@id/raw/*", function($id) {
     $wav = isset($query->wav);
 
     $extension = pathinfo($cachePath, PATHINFO_EXTENSION);
+    libxml_use_internal_errors(true);
+    $xmlContent = simplexml_load_file($cachePath);
 
     if ($defry && $extension == "png" && str_ends_with(file_get_contents($cachePath, length: 16), "CgBI")) {
       if (!is_file("$cachePath.defried")) {
@@ -156,12 +158,16 @@ Flight::route("/@id/raw/*", function($id) {
       download("$cachePath.xmlified", basename($cachePath));
       return;
     }
-    if ($json && $plistType) {
+    if ($json && ($plistType || $xmlContent)) {
       if (!is_file("$cachePath.jsonified")) {
-        $plist = new CFPropertyList($cachePath);
+        if ($plistType) {
+          $plist = new CFPropertyList($cachePath);
 
-        $array = $plist->toArray();
-        convertDataToStrings($array);
+          $array = $plist->toArray();
+          convertDataToStrings($array);
+        } else {
+          $array = json_decode(json_encode($xmlContent), true);
+        }
         
         $json = json_encode($array, JSON_PRETTY_PRINT);
         file_put_contents("$cachePath.jsonified", str_replace("    ", "  ", $json));
