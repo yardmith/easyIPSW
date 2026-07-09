@@ -715,6 +715,10 @@ function storeFolder($path, LoopInterface $loop) {
           array_push($originalFiles, str_replace([".original", "$path/"], "", $file->getPathname()));
         }
       }
+      if (empty($originalFiles)) {
+        removeJob($job);
+        return;
+      }
 
       $renameArgs = [];
       foreach ($originalFiles as $filename) {
