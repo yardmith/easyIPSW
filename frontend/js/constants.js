@@ -30,8 +30,8 @@ const EXTENSION_ICONS = {
   "plist": "list",
   "json": "list",
   "xml": "list",
-  "strings": "list",
 
+  "strings": "text",
   "txt": "text",
 
   "mp3": "audio",

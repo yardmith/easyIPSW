@@ -50,10 +50,21 @@ function pathNeedsDmgExtraction(path) {
   return false;
 }
 
-function getIconNameForFile(filename, tag = null) {
+function normalizeTag(tag) {
+  if (!tag || !typeof tag === "string") {
+    return;
+  }
+  return tag.split("|")[0];
+}
+
+function getIconNameForFile(info) {
+  let filename = info.name;
+  let tag = normalizeTag(info.tag);
   let extension = filename.split(".").pop();
 
-  if (tag in TAG_ICONS) {
+  if ("plist_type" in info) {
+    return "list";
+  } else if (tag in TAG_ICONS) {
     return TAG_ICONS[tag];
   } else if (extension in EXTENSION_ICONS) {
     return EXTENSION_ICONS[extension];
@@ -115,6 +126,9 @@ window.onload = () => {
   const imageViewer = getElem("info-image-viewer");
   const imageViewerPreview = getElem("image-viewer-preview");
   const imageViewerDimensions = getElem("image-viewer-dimensions");
+
+  const textViewer = getElem("info-text-viewer");
+  const textViewerPreview = getElem("text-viewer-preview");
 
   const isMouse = window.matchMedia("(pointer: fine)").matches;
   const ipswId = window.location.pathname.split("/")[1];
@@ -196,13 +210,25 @@ window.onload = () => {
     }
   }
 
-  function showFilePreview(info, path = browsePath) {
-    const filename = info.name;
-    let tag;
-    if (info.tag) tag = info.tag.split("|")[0];
-    else tag = null;
 
-    const type = getIconNameForFile(filename, tag);
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async function showFilePreview(info, path = browsePath) {
+    const filename = info.name;
+    let tag = normalizeTag(info.tag);
+
+    const type = getIconNameForFile(info);
     const rawUrl = getRawUrl(filename, path);
     changeInfoView();
 
@@ -247,15 +273,40 @@ window.onload = () => {
         changeInfoView(imageViewer);
         imageViewerDimensions.innerText = `(${imageViewerPreview.naturalWidth} x ${imageViewerPreview.naturalHeight} px)`;
       };
+    } else if (type == "text") {
+      const request = await fetch(rawUrl);
+      const buffer = await request.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+
+      let encoding = "utf-8";
+      if (bytes[0] == 0xFF && bytes[1] == 0xFE)
+        encoding = "utf-16le";
+      else if (bytes[0] == 0xFE && bytes[1] == 0xFF)
+        encoding = "utf-16be";
+
+      textViewerPreview.textContent = new TextDecoder(encoding).decode(buffer);
+      changeInfoView(textViewer);
     }
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   function openContextMenu(info, x, y, path = browsePath, listingElement = null) {
     const filename = info.name;
     const extension = filename.split(".").pop();
-    let tag;
-    if (info.tag) tag = info.tag.split("|")[0];
-    else tag = null;
+    let tag = normalizeTag(info.tag);
 
     if (listingElement) {
       contextMenuFilename.classList.remove("hidden");
@@ -533,7 +584,7 @@ window.onload = () => {
 
         let tag = null;
         if ("tag" in info) {
-          tag = info.tag.split("|")[0];
+          tag = normalizeTag(info.tag);
           if (tag in TAG_FRIENDLY_NAMES) {
             clone.querySelector('[data-field="tag"]').innerText = `(${TAG_FRIENDLY_NAMES[tag]})`;
             clone.querySelector('[data-field="tag"]').classList.remove("hidden");
@@ -553,7 +604,7 @@ window.onload = () => {
           clone.querySelector('[data-field="icon"]').src = `${ASSETS_DIR}/dir.svg`;
           clone.querySelector('[data-field="icon"]').alt = "Directory";
         } else {
-          let icon = getIconNameForFile(filename, tag);
+          let icon = getIconNameForFile(info);
           clone.querySelector('[data-field="icon"]').src = `${ASSETS_DIR}/${icon}.svg`;
           clone.querySelector('[data-field="icon"]').alt = icon;
         }
@@ -648,7 +699,7 @@ window.onload = () => {
       if (data.extracted) extractedDmgs.push(filename);
       dmgInfo[filename] = {
         "size": data.size,
-        "tag": data.tag.split("|")[0]
+        "tag": normalizeTag(data.tag)
       };
       navigateTo(data.path, false);
     }

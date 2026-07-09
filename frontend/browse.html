@@ -114,6 +114,12 @@
         <div id="image-viewer-dimensions" class="text-xs text-slate-600 dark:text-zinc-400">(Size)</div>
       </div>
 
+      <div id="info-text-viewer" class="grow w-full sm:h-full flex justify-center items-center hidden">
+        <div class="w-3/4 h-3/4 bg-slate-100 border-1 border-slate-300 shadow-xl/3 rounded-3xl p-4">
+          <textarea readonly id="text-viewer-preview" class="w-full h-full resize-none"></textarea>
+        </div>
+      </div>
+
       <div id="info-extracting" class="grow w-full flex flex-col justify-center items-center gap-4 hidden">
         <div id="extracting-progress-bar" class="w-1/4 h-2 bg-slate-200 rounded-full min-w-80 dark:bg-zinc-700 overflow-hidden">
           <div id="extracting-progress-bar-fill" class="h-full bg-blue-400" style="width: 0%;"></div>
