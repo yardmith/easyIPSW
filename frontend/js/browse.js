@@ -120,6 +120,7 @@ window.onload = () => {
   const contextMenuDownloadJson = getElem("context-menu-download-json");
   const contextMenuDownloadDecrypted = getElem("context-menu-download-decrypted");
   const contextMenuDownloadPng = getElem("context-menu-download-png");
+  const contextMenuDownloadWav = getElem("context-menu-download-wav");
 
   const tooltip = getElem("tooltip");
 
@@ -233,6 +234,7 @@ window.onload = () => {
 
     const type = getIconNameForFile(info);
     const rawUrl = getRawUrl(filename, path);
+    const extension = filename.split(".").pop();
     changeInfoView();
 
     // File stats (top)
@@ -290,8 +292,10 @@ window.onload = () => {
       textViewerPreview.textContent = new TextDecoder(encoding).decode(buffer);
       changeInfoView(textViewer);
     } else if (type == "audio") {
-      audioViewerPreview.src = rawUrl;
+      let url = rawUrl;
+      if (WAVABLE_FILES.includes(extension)) url += "?wav";
 
+      audioViewerPreview.src = url;
       audioViewerPreview.oncanplaythrough = () => {
         changeInfoView(audioViewer);
       };
@@ -347,16 +351,21 @@ window.onload = () => {
     contextMenuDownloadXml.onclick = download;
     contextMenuDownloadJson.onclick = download;
     contextMenuDownloadPng.onclick = download;
+    contextMenuDownloadWav.onclick = download;
 
     contextMenuDownloadRaw.classList.add("hidden");
     contextMenuDownloadXml.classList.add("hidden");
     contextMenuDownloadJson.classList.add("hidden");
     contextMenuDownloadPng.classList.add("hidden");
+    contextMenuDownloadWav.classList.add("hidden");
 
     if (extension == "png" && info.cgbi) {
       contextMenuDownload.setAttribute("data-url", rawUrl + "?defry");
       contextMenuDownloadRaw.classList.remove("hidden");
       contextMenuDownloadRaw.setAttribute("data-url", rawUrl);
+    } else if (WAVABLE_FILES.includes(extension)) {
+      contextMenuDownloadWav.setAttribute("data-url", rawUrl + "?wav");
+      contextMenuDownloadWav.classList.remove("hidden");
     } else if (info.plist_type) {
       if (info.plist_type != "xml") {
         contextMenuDownloadXml.setAttribute("data-url", rawUrl + "?xml");

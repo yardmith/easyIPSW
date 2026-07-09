@@ -42,6 +42,7 @@ const EXTENSION_ICONS = {
   "flac": "audio",
   "aiff": "audio",
   "aif": "audio",
+  "aifc": "audio",
   "caf": "audio",
   "opus": "audio"
 };
@@ -54,3 +55,4 @@ const TAG_ICONS = {
   "ibec": "iboot"
 };
 const DIR_LIKE_FILES = ["dmg", "aea"];
+const WAVABLE_FILES = ["caf", "aif", "aiff", "aifc"];
