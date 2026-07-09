@@ -130,6 +130,9 @@ window.onload = () => {
   const textViewer = getElem("info-text-viewer");
   const textViewerPreview = getElem("text-viewer-preview");
 
+  const audioViewer = getElem("info-audio-viewer");
+  const audioViewerPreview = getElem("audio-viewer-preview");
+
   const isMouse = window.matchMedia("(pointer: fine)").matches;
   const ipswId = window.location.pathname.split("/")[1];
   const wsProtocol = window.location.protocol == "https:" ? "wss" : "ws";
@@ -286,6 +289,12 @@ window.onload = () => {
 
       textViewerPreview.textContent = new TextDecoder(encoding).decode(buffer);
       changeInfoView(textViewer);
+    } else if (type == "audio") {
+      audioViewerPreview.src = rawUrl;
+
+      audioViewerPreview.oncanplaythrough = () => {
+        changeInfoView(audioViewer);
+      };
     }
   }
 

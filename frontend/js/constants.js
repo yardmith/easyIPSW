@@ -41,6 +41,7 @@ const EXTENSION_ICONS = {
   "ogg": "audio",
   "flac": "audio",
   "aiff": "audio",
+  "aif": "audio",
   "caf": "audio",
   "opus": "audio"
 };
