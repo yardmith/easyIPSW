@@ -403,7 +403,7 @@ function getFileTags($ipswId) {
     // Fall back to Restore.plist, which even the oldest IPSWs have
     $restorePlist = (new CFPropertyList("$cachePath/Restore.plist"))->toArray();
 
-    $setTag = function($filename, $tag) use ($tags) {
+    $setTag = function($filename, $tag) use (&$tags) {
       $tags[$filename] = $tag;
     };
 
