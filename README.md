@@ -40,12 +40,15 @@ Apple's firmware files contain many encrypted files in several different formats
     - Route all URLs through index.php except /assets and /js
     - Requests with URLs within /assets and /js should be served /frontend/assets and /frontend/js, respectively
     - Requests to /*/ws should be proxied to localhost:8081 and have the upgrade headers set
-    - An example NGINX configuration is provided here:
+    - Make sure the `X-Accel-Redirect`/`X-Sendfile` headers are properly accounted for
+    - If you're using NGINX, you can use the below config:
       ```
       server {
         listen 80;
-        root /path/to/cloned/repo;
         server_name your.domain.com;
+
+        set $root /path/to/cloned/repo;
+        root $root;
 
         index index.php;
 
@@ -78,6 +81,11 @@ Apple's firmware files contain many encrypted files in several different formats
           proxy_set_header X-Real-IP $remote_addr;
 
           proxy_read_timeout 3600s;
+        }
+
+        location /cache {
+          internal;
+          alias $root/cache;
         }
       }
       ```

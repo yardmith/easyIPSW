@@ -8,6 +8,18 @@ require_once "constants.php";
 require_once "db_utils.php";
 require_once "ipsw_utils.php";
 
+function download($path, $filename = null) {
+  Flight::response()->setRealHeader("Content-Disposition: attachment" . ($filename ? "; filename=\"$filename\"" : ""));
+
+  $mimeType = mime_content_type($path);
+  $mimeType = $mimeType !== false ? $mimeType : "application/octet-stream";
+  Flight::response()->setRealHeader("Content-Type: $mimeType");
+
+  Flight::response()->setRealHeader("X-Sendfile: $path");
+  $path = str_replace(CACHE_DIR, "/cache", $path);
+  Flight::response()->setRealHeader("X-Accel-Redirect: $path");
+}
+
 Flight::set("flight.debug", DEBUG);
 Flight::set("flight.views.path", FRONTEND_DIR);
 Flight::set("flight.views.extension", "html");
@@ -58,8 +70,7 @@ Flight::route("/@id/raw/*", function($id) {
         exec(BIN_DIR . "pngdefry -s .defried " . escapeshellarg($cachePath));
         rename(dirname($cachePath) . "/" . pathinfo($cachePath, PATHINFO_FILENAME) . ".defried.png", "$cachePath.defried");
       }
-      /** @disregard */
-      Flight::download("$cachePath.defried", basename($cachePath));
+      download("$cachePath.defried", basename($cachePath));
       return;
     }
     if ($decrypt) {
@@ -83,8 +94,7 @@ Flight::route("/@id/raw/*", function($id) {
 
         subscribeToJobAsync($decryptJob, function($status, $data) use ($cachePath) {
           if ($status == "done") {
-            /** @disregard */
-            Flight::download("$cachePath.decrypted", basename($cachePath));
+            download("$cachePath.decrypted", basename($cachePath));
           } elseif ($status == "error") {
             Flight::halt(isset($data["code"]) ? $data["code"] : 500, $data["message"]);
           }
@@ -93,8 +103,7 @@ Flight::route("/@id/raw/*", function($id) {
       }
 
       if (is_file("$cachePath.decrypted") && !$isRootFs && !$isAea) {
-        /** @disregard */
-        Flight::download("$cachePath.decrypted", basename($cachePath));
+        download("$cachePath.decrypted", basename($cachePath));
         return;
       }
     }
@@ -130,8 +139,7 @@ Flight::route("/@id/raw/*", function($id) {
         }
       }
 
-      /** @disregard */
-      Flight::download("$cachePath.pngified", basename($cachePath) . ".png");
+      download("$cachePath.pngified", basename($cachePath) . ".png");
       return;
     }
 
@@ -141,8 +149,7 @@ Flight::route("/@id/raw/*", function($id) {
         $plist = new CFPropertyList($cachePath);
         $plist->saveXML("$cachePath.xmlified", true);
       }
-      /** @disregard */
-      Flight::download("$cachePath.xmlified", basename($cachePath));
+      download("$cachePath.xmlified", basename($cachePath));
       return;
     }
     if ($json && $plistType) {
@@ -155,14 +162,12 @@ Flight::route("/@id/raw/*", function($id) {
         $json = json_encode($array, JSON_PRETTY_PRINT);
         file_put_contents("$cachePath.jsonified", str_replace("    ", "  ", $json));
       }
-      /** @disregard */
-      Flight::download("$cachePath.jsonified", basename($cachePath) . ".json");
+      download("$cachePath.jsonified", basename($cachePath) . ".json");
       return;
     }
 
     if (is_file("$cachePath.original")) {
-      /** @disregard */
-      Flight::download("$cachePath.original", basename($cachePath));
+      download("$cachePath.original", basename($cachePath));
       return;
     }
 
@@ -170,8 +175,7 @@ Flight::route("/@id/raw/*", function($id) {
       $job = storeFolder($cachePath, Loop::get());
       subscribeToJobAsync($job, function($status, $data) use ($cachePath) {
         if ($status == "done") {
-          /** @disregard */
-          Flight::download("$cachePath.zipped", basename($cachePath) . ".zip");
+          download("$cachePath.zipped", basename($cachePath) . ".zip");
           return;
         } elseif ($status == "error") {
           exit($data["message"]);
@@ -183,7 +187,7 @@ Flight::route("/@id/raw/*", function($id) {
       Flight::halt(404);
     }
     
-    Flight::download($cachePath);
+    download($cachePath);
   };
 
   $cacheJob = cacheIpswContents($id, Loop::get());
