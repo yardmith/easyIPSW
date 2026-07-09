@@ -17,7 +17,7 @@
   <link rel="icon" href="/assets/icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=block" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=block" rel="stylesheet">
 
   <link rel="preload" href="/assets/loader.svg" as="image" type="image/svg+xml">
   <link rel="preload" href="/assets/chevron-right.svg" as="image" type="image/svg+xml">
@@ -120,8 +120,28 @@
         </div>
       </div>
 
-      <div id="info-audio-viewer" class="grow w-full sm:h-full flex justify-center items-center hidden">
+      <div id="info-audio-viewer" class="grow w-full sm:w-auto sm:h-full flex justify-center items-center hidden">
         <audio id="audio-viewer-preview" controls></audio>
+      </div>
+
+      <div id="info-list-viewer" class="grow w-full sm:h-full flex flex-col gap-4 justify-center items-center hidden">
+        <div class="flex flex-wrap justify-center bg-slate-200 dark:bg-zinc-800 rounded-2xl shadow-xl/2 dark:shadow-none p-px gap-2">
+          <button id="list-viewer-viewer" class="cursor-pointer outline-slate-300 dark:outline-zinc-600 p-3 rounded-2xl transition">Viewer</button>
+          <button id="list-viewer-json" class="cursor-pointer outline-slate-300 dark:outline-zinc-600 p-3 rounded-2xl transition">JSON</button>
+          <button id="list-viewer-xml" class="cursor-pointer outline-slate-300 dark:outline-zinc-600 p-3 rounded-2xl transition">XML Plist</button>
+        </div>
+        <div class="flex flex-col w-3/4 h-3/4 bg-slate-100 dark:bg-zinc-800 border-1 border-slate-300 dark:border-zinc-700 shadow-xl/3 dark:shadow-none rounded-3xl p-4">
+          <textarea readonly id="list-viewer-textarea" class="font-[Source_Code_Pro] w-full h-full resize-none hidden"></textarea>
+          <div id="list-viewer-items" class="flex flex-col w-full h-full overflow-y-auto gap-1">
+            <div id="list-viewer-item-template" class="flex items-start gap-1 bg-slate-100 dark:bg-zinc-800 hidden">
+              <img data-field="expand-collapse" src="/assets/chevron-right.svg" alt="Collapse" title="Collapse" class="w-5 rotate-90 cursor-pointer mt-0.5 dark:invert transition">
+              <div data-field="text">Key</div>
+            </div>
+            <div id="list-viewer-container-template" class="flex flex-col gap-1">
+              <div data-field="items" class="flex flex-col gap-1 ml-4"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div id="info-extracting" class="grow w-full flex flex-col justify-center items-center gap-4 hidden">

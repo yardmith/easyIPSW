@@ -134,6 +134,18 @@ window.onload = () => {
   const audioViewer = getElem("info-audio-viewer");
   const audioViewerPreview = getElem("audio-viewer-preview");
 
+  const listViewer = getElem("info-list-viewer");
+  const listViewerPreview = getElem("list-viewer-preview");
+  const listViewerTextarea = getElem("list-viewer-textarea");
+  const listViewerItems = getElem("list-viewer-items");
+  const listViewerViewer = getElem("list-viewer-viewer");
+  const listViewerJson = getElem("list-viewer-json");
+  const listViewerXml = getElem("list-viewer-xml");
+  const listViewerItemTemplate = getElem("list-viewer-item-template");
+  const listViewerContainerTemplate = getElem("list-viewer-container-template");
+  listViewerItemTemplate.remove();
+  listViewerContainerTemplate.remove();
+
   const isMouse = window.matchMedia("(pointer: fine)").matches;
   const ipswId = window.location.pathname.split("/")[1];
   const wsProtocol = window.location.protocol == "https:" ? "wss" : "ws";
@@ -299,6 +311,105 @@ window.onload = () => {
       audioViewerPreview.oncanplaythrough = () => {
         changeInfoView(audioViewer);
       };
+    } else if (type == "list") {
+      const request = await fetch(rawUrl + "?json");
+      const content = await request.json();
+      let xmlText;
+
+      const changeTab = (tab) => {
+        const classes = ["bg-slate-100", "dark:bg-zinc-700", "outline-1"];
+        const tabs = [listViewerViewer, listViewerJson, listViewerXml];
+        for (let i = 0; i < tabs.length; i++) {
+          if (tabs[i] == tab)
+            tabs[i].classList.add(...classes);
+          else
+            tabs[i].classList.remove(...classes);
+        }
+      };
+
+      const showText = (text, tab) => {
+        listViewerTextarea.classList.remove("hidden");
+        listViewerItems.classList.add("hidden");
+        listViewerTextarea.textContent = text;
+      };
+
+      listViewerViewer.onclick = () => {
+        changeTab(listViewerViewer);
+        listViewerTextarea.classList.add("hidden");
+        listViewerItems.classList.remove("hidden");
+      };
+      listViewerJson.onclick = () => {
+        changeTab(listViewerJson);
+        showText(JSON.stringify(content, null, 2), listViewerJson);
+      };
+      if (info.plist_type || extension == "xml") {
+        listViewerXml.innerText = extension == "xml" ? "XML" : "XML Plist";
+        listViewerXml.onclick = async () => {
+          changeTab(listViewerXml);
+          if (!xmlText) {
+            const xmlRequest = await fetch(rawUrl + "?xml");
+            xmlText = await xmlRequest.text();
+          }
+          showText(xmlText, listViewerXml);
+        };
+        listViewerXml.classList.remove("hidden");
+      } else {
+        listViewerXml.classList.add("hidden");
+      }
+
+      const recurse = (content, container = listViewerItems) => {
+        for (const [key, value] of Object.entries(content)) {
+          const clone = listViewerItemTemplate.cloneNode(true);
+          const text = clone.querySelector('[data-field="text"]');
+          const expandCollapse = clone.querySelector('[data-field="expand-collapse"]');
+
+          text.innerText = key;
+
+          clone.removeAttribute("id");
+          clone.classList.remove("hidden");
+
+          if (typeof value === "object" && value !== null) {
+            const newContainer = listViewerContainerTemplate.cloneNode(true);
+            const containerItems = newContainer.querySelector('[data-field="items"]');
+            newContainer.removeAttribute("id");
+            newContainer.prepend(clone);
+            container.appendChild(newContainer);
+
+            clone.classList.add("sticky", "top-0");
+            expandCollapse.onclick = () => {
+              if (containerItems.classList.contains("hidden")) {
+                expandCollapse.classList.add("rotate-90");
+                expandCollapse.alt = "Collapse";
+                expandCollapse.title = "Collapse";
+                containerItems.classList.remove("hidden");
+              } else {
+                expandCollapse.classList.remove("rotate-90");
+                expandCollapse.alt = "Expand";
+                expandCollapse.title = "Expand";
+                containerItems.classList.add("hidden");
+              }
+            };
+
+            recurse(value, containerItems);
+          } else {
+            container.appendChild(clone);
+            expandCollapse.classList.add("invisible");
+
+            let showValue = String(value);
+            if (typeof value === "string")
+              showValue = "\"" + showValue + "\"";
+
+            text.innerText += ": " + showValue;
+          }
+        }
+      };
+
+      listViewerTextarea.classList.add("hidden");
+      listViewerItems.replaceChildren();
+      recurse(content);
+      changeTab(listViewerViewer);
+      changeInfoView(listViewer);
+      listViewerItems.classList.remove("hidden");
     }
   }
 
