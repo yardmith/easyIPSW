@@ -284,7 +284,6 @@ function extractDmg($path, LoopInterface $loop) {
             $childPath = "$path/" . $children[0];
             $process = new Process("mv " . escapeshellarg("$childPath/") . "* " . escapeshellarg("$childPath/../") . " && rm -r " . escapeshellarg($childPath));
             $process->start();
-            $process->stderr->on("data", function($output) {var_dump($output);});
             $process->on("exit", $remove);
           } else {
             $remove();
