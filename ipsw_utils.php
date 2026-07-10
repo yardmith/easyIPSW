@@ -69,6 +69,12 @@ function img2IsEncrypted($path) {
   }
 }
 
+function img4IsEncrypted($path) {
+  // There's not a super easy way to tell, so we'll just have to shell out:
+  $result = exec(BIN_DIR . "img4 -i " . escapeshellarg($path) . " -b 2>&1", $output);
+  return !str_contains($result, "cannot get keybag");
+}
+
 function getIpswIdFromPath($path) {
   $path = Path::canonicalize($path);
   if (!str_starts_with($path, CACHE_DIR . "/")) return false;
@@ -92,7 +98,8 @@ function decryptImg($path) {
   $type = identifyImg($path);
 
   $keys = getKeyFromPath($path);
-  if (!$keys && $type > 2) return;
+  $isEncryptedImg4 = $type == 4 && img4IsEncrypted($path);
+  if (!$keys && ($type == 3 || $isEncryptedImg4)) return;
 
   rename($path, "$path.original");
   $result_code = null;
@@ -107,7 +114,7 @@ function decryptImg($path) {
       exec(BIN_DIR . "xpwntool $encPath $decPath -k " . escapeshellarg($keys->key) . " -iv " . escapeshellarg($keys->iv), result_code: $result_code);
       break;
     case 4:
-      exec(BIN_DIR . "img4 -i $encPath -o $decPath -k " . escapeshellarg($keys->iv . $keys->key), result_code: $result_code);
+      exec(BIN_DIR . "img4 -i $encPath -o $decPath" . ($keys ? " -k " . escapeshellarg($keys->iv . $keys->key) : ""), result_code: $result_code);
       break;
     default:
       return false;
@@ -308,7 +315,7 @@ function extractDmg($path, LoopInterface $loop) {
     if (is_file("$path.decrypted") && !$isRootFs && !$isAea) {
       $extract(1);
     } elseif (identifyImg($path) !== false) {
-      if (decryptImg($path) === false) {
+      if (!decryptImg($path)) {
         removeJob($job, "Failed to decrypt DMG");
         return;
       }
@@ -463,10 +470,12 @@ function getDirListing($path, $ipswId = null) {
 
   $pathList = is_array($path) ? $path : false;
 
-  if ($pathList !== false)
+  if ($pathList !== false) {
     $listing = $pathList;
-  else
+  } else {
     $listing = array_values(array_diff(scandir($path), [".", ".."]));
+    $path = rtrim($path, "/");
+  }
   $files = [];
   $tags = getFileTags($ipswId);
 
@@ -501,6 +510,7 @@ function getDirListing($path, $ipswId = null) {
       if (is_file("$filePath.original")) $actualPath .= ".original";
 
       $plistType = identifyPlist($actualPath);
+      $imgType = identifyImg($actualPath);
 
       $entry = [];
 
@@ -508,9 +518,9 @@ function getDirListing($path, $ipswId = null) {
       if ($pathList) $entry["path"] = getRelativePath($path);
       $entry["size"] = filesize($actualPath);
       if (array_key_exists($name, $tags)) $entry["tag"] = $tags[$name];
-      if (!isset($entry["tag"]) && identifyImg($actualPath) && str_contains(file_get_contents($actualPath), "EmbeddedImages")) $entry["tag"] = "ibootim";
-      if (identifyImg($actualPath) || file_get_contents($actualPath, length: 8) == "encrcdsa") $entry["has_key"] = (bool)getKeyFromPath($filePath);
-      if (identifyImg($actualPath) == 2) $entry["has_key"] = true;
+      if (!isset($entry["tag"]) && $imgType && str_contains(file_get_contents($actualPath), "EmbeddedImages")) $entry["tag"] = "ibootim";
+      if ($imgType || file_get_contents($actualPath, length: 8) == "encrcdsa") $entry["has_key"] = (bool)getKeyFromPath($filePath);
+      if ($imgType == 2 || ($imgType == 4 && !img4IsEncrypted($actualPath))) unset($entry["has_key"]);
       if ($isDmg) $entry["extracted"] = isDmgExtracted($filePath);
       if ($plistType) $entry["plist_type"] = $plistType;
       if ($extension == "png") $entry["cgbi"] = str_ends_with(file_get_contents($actualPath, length: 16), "CgBI");

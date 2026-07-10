@@ -514,7 +514,7 @@ window.onload = () => {
       };
     }
 
-    if (info.has_key === true) {
+    if (info.has_key !== false) {
       contextMenuDownloadDecrypted.onclick = () => {
         if (DIR_LIKE_FILES.includes(extension) && !extractedDmgs.includes(filename)) {
           extractingDmg = filename;
