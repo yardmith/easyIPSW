@@ -152,6 +152,7 @@ window.onload = () => {
 
   const isMouse = window.matchMedia("(pointer: fine)").matches;
   const ipswId = window.location.pathname.split("/")[1];
+  const ipswFriendlyName = document.title;
   const wsProtocol = window.location.protocol == "https:" ? "wss" : "ws";
   const ws = new WebSocket(`${wsProtocol}://${window.location.host}/${ipswId}/ws`);
 
@@ -565,6 +566,7 @@ window.onload = () => {
         initializing = false;
         initBarFill.style.width = "100%";
         initStatus.innerText = "Ready";
+        document.title = `Browse IPSW - ${ipswFriendlyName}`;
         setTimeout(() => {
           initPage.classList.add("invisible");
           listingPage.classList.remove("invisible");
@@ -578,6 +580,7 @@ window.onload = () => {
         initStatus.innerText = `Error: ${data.message}`;
         initBar.classList.add("hidden");
         disconnected = true;
+        document.title = ipswFriendlyName;
         ws.close();
       } else if (data.status == "downloading" || data.status == "extracting") {
         initInitPage();
@@ -591,11 +594,13 @@ window.onload = () => {
           bytesTotal = data.bytes_total;
           percent = data.bytes_downloaded / data.bytes_total * 100;
           statusText = "Downloading IPSW...";
+          document.title = `${Math.round(percent)}% Downloading - ${ipswFriendlyName}`;
         } else {
           bytesDone = data.bytes_extracted;
           bytesTotal = data.bytes_total;
           percent = data.bytes_extracted / data.bytes_total * 100;
           statusText = "Extracting IPSW...";
+          document.title = `${Math.round(percent)}% Extracting - ${ipswFriendlyName}`;
         }
         bytesDone = bytesToUnitsString(bytesDone);
         bytesTotal = bytesToUnitsString(bytesTotal);
