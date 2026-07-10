@@ -19,3 +19,4 @@ const ARIA2_CONNECTIONS = 16;
 const AEA_UTILS_DIR = __DIR__ . "/aea/";
 const FRONTEND_DIR = __DIR__ . "/frontend";
 const WAVABLE_FILES = ["caf", "aif", "aiff", "aifc"];
+const IMG4_CACHE_MAX = 2000;

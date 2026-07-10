@@ -10,6 +10,8 @@ require_once "db_utils.php";
 require_once "constants.php";
 require_once "job_utils.php";
 
+$img4TypeCache = [];
+
 function isDmgExtracted($path) {
   if (!$ipswId = getIpswIdFromPath($path)) return;
   return is_dir($path) && !getOngoingJob($ipswId, "extractDmg", ["filename" => basename($path)]);
@@ -70,9 +72,20 @@ function img2IsEncrypted($path) {
 }
 
 function img4IsEncrypted($path) {
+  global $img4TypeCache;
+
+  if (array_key_exists($path, $img4TypeCache))
+    return $img4TypeCache[$path];
+
   // There's not a super easy way to tell, so we'll just have to shell out:
   $result = exec(BIN_DIR . "img4 -i " . escapeshellarg($path) . " -b 2>&1", $output);
-  return !str_contains($result, "cannot get keybag");
+  $encrypted = !str_contains($result, "cannot get keybag");
+
+  $img4TypeCache[$path] = $encrypted;
+  if (count($img4TypeCache) > IMG4_CACHE_MAX)
+    array_shift($img4TypeCache);
+
+  return $encrypted;
 }
 
 function getIpswIdFromPath($path) {
