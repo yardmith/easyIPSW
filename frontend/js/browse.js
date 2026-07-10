@@ -363,7 +363,10 @@ window.onload = () => {
           const text = clone.querySelector('[data-field="text"]');
           const expandCollapse = clone.querySelector('[data-field="expand-collapse"]');
 
-          text.innerText = key;
+          if (!isNaN(key) && !isNaN(parseFloat(key)))
+            text.innerText = String(key);
+          else
+            text.innerText = "\"" + String(key) + "\"";
 
           clone.removeAttribute("id");
           clone.classList.remove("hidden");
