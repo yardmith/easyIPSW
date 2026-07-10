@@ -68,9 +68,11 @@ Flight::route("/@id/raw/*", function($id) {
     $json = isset($query->json);
     $wav = isset($query->wav);
 
+    $actualPath = is_file("$cachePath.original") ? "$cachePath.original" : $cachePath;
     $extension = pathinfo($cachePath, PATHINFO_EXTENSION);
+
     libxml_use_internal_errors(true);
-    $xmlContent = simplexml_load_file($cachePath);
+    $xmlContent = simplexml_load_file($actualPath);
 
     if ($defry && $extension == "png" && str_ends_with(file_get_contents($cachePath, length: 16), "CgBI")) {
       if (!is_file("$cachePath.defried")) {
@@ -81,7 +83,6 @@ Flight::route("/@id/raw/*", function($id) {
       return;
     }
     if ($decrypt) {
-      $actualPath = is_file("$cachePath.original") ? "$cachePath.original" : $cachePath;
       $isRootFs = file_get_contents($actualPath, length: 8) == "encrcdsa";
       $isAea = $extension == "aea";
 
@@ -118,7 +119,6 @@ Flight::route("/@id/raw/*", function($id) {
 
       if (!is_file("$cachePath.pngified")) {
         if ($imgType < 4) {
-          $actualPath = is_file($cachePath) ? $cachePath : "$cachePath.original";
           if ($imgType > 2) {
             $key = getKeyFromPath($cachePath);
             if (!$key) Flight::halt(404, "No decryption key for this file was found");
