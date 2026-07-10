@@ -146,6 +146,9 @@ window.onload = () => {
   listViewerItemTemplate.remove();
   listViewerContainerTemplate.remove();
 
+  const ibootViewer = getElem("info-iboot-viewer");
+  const ibootViewerString = getElem("iboot-viewer-string");
+
   const isMouse = window.matchMedia("(pointer: fine)").matches;
   const ipswId = window.location.pathname.split("/")[1];
   const wsProtocol = window.location.protocol == "https:" ? "wss" : "ws";
@@ -413,6 +416,9 @@ window.onload = () => {
       changeTab(listViewerViewer);
       changeInfoView(listViewer);
       listViewerItems.classList.remove("hidden");
+    } else if (type == "iboot" && info.tag.split("|").length > 1) {
+      ibootViewerString.innerText = info.tag.split("|")[1];
+      changeInfoView(ibootViewer);
     }
   }
 
