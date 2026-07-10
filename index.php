@@ -196,7 +196,7 @@ Flight::route("/@id/raw/*", function($id) {
           download("$cachePath.zipped", basename($cachePath) . ".zip");
           return;
         } elseif ($status == "error") {
-          exit($data["message"]);
+          Flight::halt(isset($data["code"]) ? $data["code"] : 500, $data["message"]);
         }
       });
       return;
@@ -218,14 +218,14 @@ Flight::route("/@id/raw/*", function($id) {
           if ($status == "done") {
             $serveFile();
           } elseif ($status == "error") {
-            exit($data["message"]);
+            Flight::halt(isset($data["code"]) ? $data["code"] : 500, $data["message"]);
           }
         });
       } else {
         $serveFile();
       }
     } elseif ($status == "error") {
-      exit($data["message"]);
+      Flight::halt(isset($data["code"]) ? $data["code"] : 500, $data["message"]);
     }
   });
 })->stream();
