@@ -737,7 +737,7 @@ window.onload = () => {
         if (info.is_dir || DIR_LIKE_FILES.includes(extension))
           clone.querySelector('[data-field="dir-arrow"]').classList.remove("hidden");
 
-        if (extractingDmg == filename) {
+        if (extractingDmg === filename) {
           clone.querySelector('[data-field="dir-arrow"]').src = `${ASSETS_DIR}/loader.svg`;
           clone.querySelector('[data-field="dir-arrow"]').classList.add("animate-spin");
         }
