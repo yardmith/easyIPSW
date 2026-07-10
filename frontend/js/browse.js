@@ -600,9 +600,7 @@ window.onload = () => {
         percent = Math.round(percent);
         initBarFill.style.width = `${percent}%`;
       }
-    }
-
-    if (extractingDmg) {
+    } else if (extractingDmg) {
       if (data.status == "done") {
         extractingStatus.innerText = "Done";
         extractingBarFill.style.width = "100%";
@@ -654,6 +652,8 @@ window.onload = () => {
         extractingStatus.innerText = "Finalizing...";
         extractingBarFill.style.width = "99%";
       }
+    } else if (data.status == "error") {
+      navigateTo("/");
     }
 
     if (["listing", "results"].includes(data.status)) {
