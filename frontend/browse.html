@@ -56,7 +56,7 @@
       </div>
     </div>
 
-    <div id="listing-left-sidebar" class="flex flex-col gap-2 p-4 h-1/2 w-full sm:h-full sm:w-1/4 sm:max-w-100 sm:min-w-60 bg-slate-100 dark:bg-zinc-800 border-b-1 sm:border-1 border-solid border-slate-300 dark:border-zinc-700 sm:ml-2 sm:mr-2 sm:rounded-4xl sm:shadow-xl/3 dark:shadow-none overflow-hidden transition">
+    <div id="listing-left-sidebar" class="flex flex-col gap-2 p-4 h-1/2 w-full sm:h-full sm:w-1/4 sm:max-w-100 sm:min-w-60 bg-slate-100 dark:bg-zinc-800 border-b-1 sm:border-1 border-solid border-slate-300 dark:border-zinc-700 sm:ml-2 sm:mr-2 sm:rounded-4xl sm:shadow-xl/3 dark:shadow-none overflow-hidden min-h-0 transition">
       <div id="listing-path" class="text-slate-600 text-sm ml-3 dark:text-zinc-400 whitespace-nowrap invisible">/path</div>
       <div class="flex flex-row items-center w-19/20 self-center relative">
         <input id="listing-search-box" type="text" placeholder="Search for a file..." class="p-2 w-full bg-slate-200 dark:bg-zinc-700 rounded-xl outline-1 outline-transparent focus:outline-slate-300 dark:focus:outline-zinc-600 focus:shadow-xl/2 disabled:opacity-50 transition">
@@ -80,7 +80,7 @@
       </div>
     </div>
 
-    <div id="listing-info-view" class="flex flex-col items-center w-full h-full">
+    <div id="listing-info-view" class="flex flex-col items-center w-full h-full min-h-0">
       <div id="info-view-file-stats" class="flex flex-row justify-center items-center w-full h-max text-center mt-2 sm:mt-1 hidden">
         <div class="flex-1"></div>
 
@@ -109,22 +109,22 @@
         <div class="text-slate-600 dark:text-zinc-400">Select a file to view it</div>
       </div>
 
-      <div id="info-image-viewer" class="grow w-full sm:w-auto sm:h-full flex flex-col justify-center items-center gap-2 hidden">
+      <div id="info-image-viewer" class="grow w-full sm:w-auto sm:h-full flex flex-col justify-center items-center gap-2 min-h-0 hidden">
         <img id="image-viewer-preview" class="max-h-1/2 border-1 bg-slate-50 border-slate-300 dark:border-zinc-700 bg-[url(/assets/checker.svg)]">
         <div id="image-viewer-dimensions" class="text-xs text-slate-600 dark:text-zinc-400">(Size)</div>
       </div>
 
-      <div id="info-text-viewer" class="grow w-full sm:h-full flex justify-center items-center hidden">
+      <div id="info-text-viewer" class="grow w-full sm:h-full flex justify-center items-center min-h-0 hidden">
         <div class="w-3/4 h-3/4 bg-slate-100 dark:bg-zinc-800 border-1 border-slate-300 dark:border-zinc-700 shadow-xl/3 dark:shadow-none rounded-3xl p-4">
           <textarea readonly id="text-viewer-preview" class="w-full h-full resize-none"></textarea>
         </div>
       </div>
 
-      <div id="info-audio-viewer" class="grow w-full sm:w-auto sm:h-full flex justify-center items-center hidden">
+      <div id="info-audio-viewer" class="grow w-full sm:w-auto sm:h-full flex justify-center items-center min-h-0 hidden">
         <audio id="audio-viewer-preview" controls></audio>
       </div>
 
-      <div id="info-list-viewer" class="grow w-full sm:h-full flex flex-col gap-4 justify-center items-center hidden">
+      <div id="info-list-viewer" class="grow w-full sm:h-full flex flex-col gap-4 justify-center items-center min-h-0 hidden">
         <div class="flex flex-wrap justify-center bg-slate-200 dark:bg-zinc-800 rounded-2xl shadow-xl/2 dark:shadow-none p-px gap-2">
           <button id="list-viewer-viewer" class="cursor-pointer outline-slate-300 dark:outline-zinc-600 p-3 rounded-2xl transition">Viewer</button>
           <button id="list-viewer-json" class="cursor-pointer outline-slate-300 dark:outline-zinc-600 p-3 rounded-2xl transition">JSON</button>
