@@ -269,7 +269,7 @@ window.onload = () => {
     infoViewIcon.alt = type;
 
     infoViewDownloadLink.onclick = () => {
-      window.location.href = getRawUrl(filename) + (info.cgbi ? "?defry" : "");
+      window.location.href = rawUrl + (info.cgbi ? "?defry" : "");
     };
     infoViewDownloadOptions.onclick = () => {
       const rect = infoViewDownloadOptions.getBoundingClientRect();
