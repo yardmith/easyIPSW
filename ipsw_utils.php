@@ -192,6 +192,11 @@ function decryptAea($path, LoopInterface $loop) {
       return;
     }
 
+    if (!is_dir(AEA_UTILS_DIR . ".venv")) {
+      removeJob($job, "AEA virtual environment does not exist");
+      return;
+    }
+
     rename($path, "$path.original");
 
     $process = new Process(AEA_UTILS_DIR . ".venv/bin/python3 " . AEA_UTILS_DIR . "extract_aea.py " . escapeshellarg("$path.original") . " " . escapeshellarg("$path.decrypted"));
