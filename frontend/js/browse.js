@@ -105,7 +105,8 @@ window.onload = () => {
   const infoViewSize = getElem("info-view-stats-size");
   const infoViewDownloadLink = getElem("info-view-stats-download");
   const infoViewDownloadOptions = getElem("info-view-stats-download-options");
-  const infoViewStart = getElem("info-start");
+  const infoViewMessage = getElem("info-message");
+  const infoViewMessageText = getElem("info-message-text");
   const infoViewExtracting = getElem("info-extracting");
   const extractingBar = getElem("extracting-progress-bar");
   const extractingBarFill = getElem("extracting-progress-bar-fill");
@@ -419,6 +420,9 @@ window.onload = () => {
     } else if (type == "iboot" && info.tag.split("|").length > 1) {
       ibootViewerString.innerText = info.tag.split("|")[1];
       changeInfoView(ibootViewer);
+    } else {
+      infoViewMessageText.innerText = "No preview available";
+      changeInfoView(infoViewMessage);
     }
   }
 
