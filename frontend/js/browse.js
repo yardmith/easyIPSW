@@ -209,6 +209,7 @@ window.onload = () => {
     listingPathText.classList.remove("invisible");
     listingPathText.innerHTML = browsePath == "" ? "/" : browsePath.replaceAll("/", "<wbr>/");
     listingSearchBox.value = "";
+    listingSearchBox.dispatchEvent(new Event("change"));
     if (pushState) history.pushState({"path": path}, "", removeTrailingSlash(`${window.location.origin}/${ipswId}/browse${path}`));
 
     sendCommand("listing", {"location": path});
