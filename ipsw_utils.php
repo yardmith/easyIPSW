@@ -533,7 +533,7 @@ function getDirListing($path, $ipswId = null) {
       if (array_key_exists($name, $tags)) $entry["tag"] = $tags[$name];
       if (!isset($entry["tag"]) && $imgType && str_contains(file_get_contents($actualPath), "EmbeddedImages")) $entry["tag"] = "ibootim";
       if ($imgType || file_get_contents($actualPath, length: 8) == "encrcdsa") $entry["has_key"] = (bool)getKeyFromPath($filePath);
-      if ($imgType == 2 || ($imgType == 4 && !img4IsEncrypted($actualPath))) unset($entry["has_key"]);
+      if ($imgType == 2 || ($imgType == 4 && !img4IsEncrypted($actualPath))) $entry["has_key"] = true;
       if ($isDmg) $entry["extracted"] = isDmgExtracted($filePath);
       if ($plistType) $entry["plist_type"] = $plistType;
       if ($extension == "png") $entry["cgbi"] = str_ends_with(file_get_contents($actualPath, length: 16), "CgBI");
