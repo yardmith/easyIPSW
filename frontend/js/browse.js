@@ -595,13 +595,13 @@ window.onload = () => {
           bytesTotal = data.bytes_total;
           percent = data.bytes_downloaded / data.bytes_total * 100;
           statusText = "Downloading IPSW...";
-          document.title = `${Math.round(percent)}% Downloading - ${ipswFriendlyName}`;
+          document.title = `${Math.floor(percent)}% Downloading - ${ipswFriendlyName}`;
         } else {
           bytesDone = data.bytes_extracted;
           bytesTotal = data.bytes_total;
           percent = data.bytes_extracted / data.bytes_total * 100;
           statusText = "Extracting IPSW...";
-          document.title = `${Math.round(percent)}% Extracting - ${ipswFriendlyName}`;
+          document.title = `${Math.floor(percent)}% Extracting - ${ipswFriendlyName}`;
         }
         bytesDone = bytesToUnitsString(bytesDone);
         bytesTotal = bytesToUnitsString(bytesTotal);
@@ -613,7 +613,7 @@ window.onload = () => {
           percent += 100 / data.steps_total * data.steps_done;
         }
 
-        percent = Math.round(percent);
+        percent = Math.floor(percent);
         initBarFill.style.width = `${percent}%`;
       }
     } else if (extractingDmg) {
@@ -662,7 +662,7 @@ window.onload = () => {
           percent += 100 / data.steps_total * data.steps_done;
         }
 
-        percent = Math.round(percent);
+        percent = Math.floor(percent);
         extractingBarFill.style.width = `${percent}%`;
       } else if (data.status == "finalizing") {
         extractingStatus.innerText = "Finalizing...";
