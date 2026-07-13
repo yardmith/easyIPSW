@@ -352,7 +352,7 @@ function extractDmg($path, LoopInterface $loop) {
         }
       }, $loop);
     } else {
-      rename($path, "$path.original");
+      if (!is_file("$path.original")) rename($path, "$path.original");
       $extract(1);
     }
   });
