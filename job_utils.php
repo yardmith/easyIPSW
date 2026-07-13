@@ -9,6 +9,7 @@ require_once "vendor/autoload.php";
 $redis = new Redis();
 $redis->connect("127.0.0.1", 6379);
 $redis->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_PHP);
+$redis->setOption(Redis::OPT_READ_TIMEOUT, -1);
 
 function _forEachJob($do, $ipswId = null, $action = null, $data = [], $jobId = null) {
   global $redis;
