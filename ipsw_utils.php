@@ -276,7 +276,7 @@ function extractDmg($path, LoopInterface $loop) {
     $prevPercent = null;
 
     $process->stdout->on("data", function($output) use (&$prevPercent, $job, $totalSteps) {
-      if (!str_contains($output, "%")) return;
+      if (!str_contains($output, "%") || str_contains($output, "% Open")) return;
       $percent = intval(explode("%", str_replace([hex2bin("08"), " "], "", $output))[0]);
       if ($percent == $prevPercent) return;
 
