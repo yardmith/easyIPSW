@@ -1,6 +1,6 @@
 <?php
 
-const DEBUG = true;
+const DEBUG = false;
 const DB_FILENAME = "db.sqlite";
 const WS_PORT = 8081;
 const CACHE_DIR_NAME = "cache";
