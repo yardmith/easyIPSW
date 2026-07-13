@@ -131,10 +131,10 @@ class IpswWs implements MessageComponentInterface {
           return;
         }
 
-        $result = ["path" => $msg["path"], "extracted" => !pathNeedsDmgExtraction($dmgPath, true), "size" => filesize($actualPath)];
+        $result = ["path" => $msg["path"], "extracted" => isDmgExtracted($dmgPath), "size" => filesize($actualPath)];
         $tags = getFileTags($ipswId);
         if (isset($tags[basename($dmgPath)])) $result["tag"] = $tags[basename($dmgPath)];
-        
+
         $this->sendStatus($from, "dmginfo", extra_fields: $result);
         break;
 
