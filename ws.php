@@ -130,8 +130,12 @@ class IpswWs implements MessageComponentInterface {
           $this->sendStatus($from, "error", "The path specified was not found");
           return;
         }
+
+        $result = ["path" => $msg["path"], "extracted" => !pathNeedsDmgExtraction($dmgPath, true), "size" => filesize($actualPath)];
+        $tags = getFileTags($ipswId);
+        if (isset($tags[basename($dmgPath)])) $result["tag"] = $tags[basename($dmgPath)];
         
-        $this->sendStatus($from, "dmginfo", extra_fields: ["path" => $msg["path"], "extracted" => !pathNeedsDmgExtraction($dmgPath, true), "tag" => getFileTags($ipswId)[basename($dmgPath)], "size" => filesize($actualPath)]);
+        $this->sendStatus($from, "dmginfo", extra_fields: $result);
         break;
 
       case "decryptdmg":
