@@ -8,6 +8,12 @@ A simple and intuitive way to browse through the various propriety, encrypted fo
 
 Apple's firmware files contain many encrypted files in several different formats. These require finding decryption keys online, running command-line tools, and oftentimes a fair bit of head banging to view their contents. This project cuts out all of that work and makes it way easier to find what you need, or even just want to take a look at, inside any IPSW, with a familiar file browsing interface.
 
+<div align="center">
+  <img width="850" alt="Screenshot 1" src="https://github.com/user-attachments/assets/ee8aa699-b043-437f-a69d-8daa460de008" />
+  <img width="850" alt="Screenshot 2" src="https://github.com/user-attachments/assets/7f7a02ef-3bd5-4488-83fb-3f3725b28884" />
+  <img width="850" alt="Screenshot 3" src="https://github.com/user-attachments/assets/04bed767-e5b3-423e-84a6-06e4b1cf4cc0" />
+</div>
+
 ## Features
 
 - Automatic download and extraction of IPSWs on a remote server, ensuring none of your own bandwidth is used
