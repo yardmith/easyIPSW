@@ -73,7 +73,7 @@ Flight::route("/@id/raw/*", function($id) {
     $extension = pathinfo($cachePath, PATHINFO_EXTENSION);
 
     libxml_use_internal_errors(true);
-    $xmlContent = simplexml_load_file($actualPath);
+    $xmlContent = is_dir($cachePath) ? false : simplexml_load_file($actualPath);
 
     if ($defry && $extension == "png" && str_ends_with(file_get_contents($cachePath, length: 16), "CgBI")) {
       if (!is_file("$cachePath.defried")) {
