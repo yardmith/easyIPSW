@@ -41,7 +41,8 @@ Flight::route("/@id/download", function($id) {
   $info = getIpswInfo($id);
 
   if (!$info) {
-    Flight::halt(404, "Unknown IPSW ($id)");
+    Flight::notFound();
+    Flight::halt(404);
   }
   if (!$info->url) {
     Flight::halt(500, "This IPSW ($id) doesn't have a download URL");
